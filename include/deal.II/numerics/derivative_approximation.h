@@ -29,14 +29,6 @@
 
 DEAL_II_NAMESPACE_OPEN
 
-template <int dim, int spacedim> class DoFHandler;
-namespace hp
-{
-  template <int dim, int spacedim> class DoFHandler;
-}
-
-
-
 /**
  * This namespace provides functions that compute a cell-wise approximation of the norm of a
  * derivative of a finite element field by taking difference quotients
@@ -269,25 +261,25 @@ namespace DerivativeApproximation
    * In a parallel computation the @p solution vector needs to contain the
    * locally relevant unknowns.
    */
-  template <class DH, class InputVector, int order>
+  template <class DH, int dim, int spacedim, class InputVector, int order>
   void
-  approximate_derivative_tensor (const Mapping<DH::dimension,DH::space_dimension> &mapping,
-                                 const DH                                     &dof,
-                                 const InputVector                            &solution,
-                                 const typename DH::active_cell_iterator      &cell,
-                                 Tensor<order,DH::dimension>                  &derivative,
-                                 const unsigned int                            component = 0);
+  approximate_derivative_tensor(const Mapping<dim, spacedim> &mapping,
+                                const DH                      &dof,
+                                const InputVector                            &solution,
+                                const TriaActiveIterator < dealii::DoFCellAccessor < DH, false > >      &cell,
+                                Tensor<order, dim>  &derivative,
+                                const unsigned int                            component = 0);
 
   /**
    * Same as above, with <tt>mapping=MappingQ1@<dim@>()</tt>.
    */
-  template <class DH, class InputVector, int order>
+  template <class DH, int dim, int spacedim, class InputVector, int order>
   void
-  approximate_derivative_tensor (const DH                                     &dof,
-                                 const InputVector                            &solution,
-                                 const typename DH::active_cell_iterator      &cell,
-                                 Tensor<order,DH::dimension>                  &derivative,
-                                 const unsigned int                            component = 0);
+  approximate_derivative_tensor(const DH                    &dof,
+                                const InputVector                            &solution,
+                                const TriaActiveIterator < dealii::DoFCellAccessor < DH, false > >      &cell,
+                                Tensor<order, dim>                  &derivative,
+                                const unsigned int                            component = 0);
 
   /**
    * Return the norm of the derivative.
