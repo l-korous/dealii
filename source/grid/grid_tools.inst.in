@@ -37,16 +37,16 @@ for (X : TRIANGULATION_AND_DOFHANDLERS; deal_II_dimension : DIMENSIONS ; deal_II
 			 const Point<deal_II_space_dimension> &);
 
   template
-    std::vector<X::active_cell_iterator>
+    std::vector<_active_cell_iterator<deal_II_dimension, X, deal_II_space_dimension>::_type>
     find_cells_adjacent_to_vertex(const X &,
 				  const unsigned int);
   template
-    X::active_cell_iterator
+    _active_cell_iterator<deal_II_dimension, X, deal_II_space_dimension>::_type
     find_active_cell_around_point (const X &,
 				   const Point<deal_II_space_dimension> &p);
 
   template
-    std::pair<X::active_cell_iterator, Point<deal_II_dimension> >
+    std::pair<_active_cell_iterator<deal_II_dimension, X, deal_II_space_dimension>::_type, Point<deal_II_dimension> >
     find_active_cell_around_point (const Mapping<deal_II_dimension, deal_II_space_dimension> &,
 				   const X &,
 				   const Point<deal_II_space_dimension> &);
@@ -81,16 +81,16 @@ for (deal_II_dimension : DIMENSIONS ; deal_II_space_dimension : SPACE_DIMENSIONS
 			 const Point<deal_II_space_dimension> &);
 
   template
-    std::vector<parallel::distributed::Triangulation<deal_II_dimension,deal_II_space_dimension>::active_cell_iterator>
+    std::vector<_active_cell_iterator<deal_II_dimension, parallel::distributed::Triangulation<deal_II_dimension,deal_II_space_dimension>, deal_II_space_dimension>::_type>
     find_cells_adjacent_to_vertex(const parallel::distributed::Triangulation<deal_II_dimension,deal_II_space_dimension> &,
 				  const unsigned int);
   template
-    parallel::distributed::Triangulation<deal_II_dimension,deal_II_space_dimension>::active_cell_iterator
+    _active_cell_iterator<deal_II_dimension, parallel::distributed::Triangulation<deal_II_dimension,deal_II_space_dimension>, deal_II_space_dimension>::_type
     find_active_cell_around_point (const parallel::distributed::Triangulation<deal_II_dimension,deal_II_space_dimension> &,
 				   const Point<deal_II_space_dimension> &p);
 
   template
-    std::pair<parallel::distributed::Triangulation<deal_II_dimension,deal_II_space_dimension>::active_cell_iterator, Point<deal_II_dimension> >
+    std::pair<_active_cell_iterator<deal_II_dimension, parallel::distributed::Triangulation<deal_II_dimension,deal_II_space_dimension>, deal_II_space_dimension>::_type, Point<deal_II_dimension> >
     find_active_cell_around_point (const Mapping<deal_II_dimension, deal_II_space_dimension> &,
 				   const parallel::distributed::Triangulation<deal_II_dimension,deal_II_space_dimension> &,
 				   const Point<deal_II_space_dimension> &);
@@ -116,12 +116,12 @@ for (deal_II_dimension : DIMENSIONS ; deal_II_space_dimension : SPACE_DIMENSIONS
 for (deal_II_space_dimension : SPACE_DIMENSIONS)
 {
 
-    parallel::distributed::Triangulation<deal_II_space_dimension>::active_cell_iterator
+    _active_cell_iterator<deal_II_space_dimension, parallel::distributed::Triangulation<deal_II_space_dimension,deal_II_space_dimension>, deal_II_space_dimension>::_type
     find_active_cell_around_point (const parallel::distributed::Triangulation<deal_II_space_dimension> &,
 				   const Point<deal_II_space_dimension> &p);
 
 
-    std::pair<parallel::distributed::Triangulation<deal_II_space_dimension>::active_cell_iterator, Point<deal_II_space_dimension> >
+    std::pair<_active_cell_iterator<deal_II_space_dimension, parallel::distributed::Triangulation<deal_II_space_dimension,deal_II_space_dimension>, deal_II_space_dimension>::_type, Point<deal_II_space_dimension> >
     find_active_cell_around_point (const Mapping<deal_II_space_dimension> &,
 				   const parallel::distributed::Triangulation<deal_II_space_dimension> &,
 				   const Point<deal_II_space_dimension> &);

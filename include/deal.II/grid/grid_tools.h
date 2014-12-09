@@ -40,6 +40,35 @@ namespace hp
 
 class SparsityPattern;
 
+template<int dim, class Container, int spacedim>
+class _active_cell_iterator
+{
+public:
+  typedef typename Container::active_cell_iterator _type;
+};
+
+template<int dim, int spacedim>
+class _active_cell_iterator<dim, dealii::DoFHandler<dim, spacedim>, spacedim>
+{
+public:
+#ifndef _MSC_VER
+  typedef typename dealii::DoFHandler<dim, spacedim>::active_cell_iterator _type;
+#else
+  typedef TriaActiveIterator < dealii::DoFCellAccessor < dealii::DoFHandler<dim, spacedim>, false > > _type;
+#endif
+};
+
+template<int dim, int spacedim>
+class _active_cell_iterator<dim, dealii::hp::DoFHandler<dim, spacedim>, spacedim>
+{
+public:
+#ifndef _MSC_VER
+  typedef typename dealii::hp::DoFHandler<dim, spacedim>::active_cell_iterator _type;
+#else
+  typedef TriaActiveIterator < dealii::DoFCellAccessor < dealii::hp::DoFHandler<dim, spacedim>, false > > _type;
+#endif
+};
+
 
 /**
  * This namespace is a collection of algorithms working on triangulations,
@@ -426,7 +455,7 @@ namespace GridTools
    * to be checked for this case.
    */
   template<int dim, template <int, int> class Container, int spacedim>
-  std::vector<typename Container<dim,spacedim>::active_cell_iterator>
+  std::vector<typename _active_cell_iterator<dim, Container<dim, spacedim>, spacedim>::_type>
   find_cells_adjacent_to_vertex (const Container<dim,spacedim> &container,
                                  const unsigned int    vertex_index);
 
@@ -463,7 +492,7 @@ namespace GridTools
    * will have to decide what to do in that case.
    */
   template <int dim, template <int,int> class Container, int spacedim>
-  typename Container<dim,spacedim>::active_cell_iterator
+  typename _active_cell_iterator<dim, Container<dim, spacedim>, spacedim>::_type
   find_active_cell_around_point (const Container<dim,spacedim>  &container,
                                  const Point<spacedim> &p);
 
@@ -514,7 +543,7 @@ namespace GridTools
    * will have to decide what to do in that case.
    */
   template <int dim, template<int, int> class Container, int spacedim>
-  std::pair<typename Container<dim,spacedim>::active_cell_iterator, Point<dim> >
+  std::pair<typename _active_cell_iterator<dim, Container<dim, spacedim>, spacedim>::_type, Point<dim> >
   find_active_cell_around_point (const Mapping<dim,spacedim>   &mapping,
                                  const Container<dim,spacedim> &container,
                                  const Point<spacedim>     &p);
@@ -540,7 +569,7 @@ namespace GridTools
    * will have to decide what to do in that case.
    */
   template <int dim, int spacedim>
-  std::pair<typename hp::DoFHandler<dim,spacedim>::active_cell_iterator, Point<dim> >
+  std::pair<typename hp::DoFHandler<dim, spacedim>::active_cell_iterator, Point<dim> >
   find_active_cell_around_point (const hp::MappingCollection<dim,spacedim>   &mapping,
                                  const hp::DoFHandler<dim,spacedim> &container,
                                  const Point<spacedim>     &p);

@@ -910,7 +910,7 @@ namespace GridTools
 
 
   template<int dim, template<int, int> class Container, int spacedim>
-  std::vector<typename Container<dim,spacedim>::active_cell_iterator>
+  std::vector<typename _active_cell_iterator<dim, Container<dim, spacedim>, spacedim>::_type>
   find_cells_adjacent_to_vertex(const Container<dim,spacedim> &container,
                                 const unsigned int    vertex)
   {
@@ -925,9 +925,9 @@ namespace GridTools
     // use a set instead of a vector
     // to ensure that cells are inserted only
     // once
-    std::set<typename Container<dim,spacedim>::active_cell_iterator> adjacent_cells;
+    std::set<typename _active_cell_iterator<dim, Container<dim, spacedim>, spacedim>::_type> adjacent_cells;
 
-    typename Container<dim,spacedim>::active_cell_iterator
+    typename _active_cell_iterator<dim, Container<dim, spacedim>, spacedim>::_type
     cell = container.begin_active(),
     endc = container.end();
 
@@ -1039,7 +1039,7 @@ next_cell:
 
     // return the result as a vector, rather than the set we built above
     return
-      std::vector<typename Container<dim,spacedim>::active_cell_iterator>
+      std::vector<typename _active_cell_iterator<dim, Container<dim, spacedim>, spacedim>::_type>
       (adjacent_cells.begin(), adjacent_cells.end());
   }
 
@@ -1049,10 +1049,10 @@ next_cell:
   {
     template <int dim, template<int, int> class Container, int spacedim>
     void find_active_cell_around_point_internal(const Container<dim,spacedim> &container,
-                                                std::set<typename Container<dim,spacedim>::active_cell_iterator> &searched_cells,
-                                                std::set<typename Container<dim,spacedim>::active_cell_iterator> &adjacent_cells)
+                                                std::set<typename _active_cell_iterator<dim, Container<dim, spacedim>, spacedim>::_type> &searched_cells,
+                                                std::set<typename _active_cell_iterator<dim, Container<dim, spacedim>, spacedim>::_type> &adjacent_cells)
     {
-      typedef typename Container<dim,spacedim>::active_cell_iterator cell_iterator;
+      typedef typename _active_cell_iterator<dim, Container<dim, spacedim>, spacedim>::_type cell_iterator;
 
       // update the searched cells
       searched_cells.insert(adjacent_cells.begin(), adjacent_cells.end());
@@ -1094,7 +1094,7 @@ next_cell:
   }
 
   template <int dim, template<int, int> class Container, int spacedim>
-  typename Container<dim,spacedim>::active_cell_iterator
+  typename _active_cell_iterator<dim, Container<dim, spacedim>, spacedim>::_type
   find_active_cell_around_point (const Container<dim,spacedim>  &container,
                                  const Point<spacedim> &p)
   {
@@ -1106,12 +1106,12 @@ next_cell:
 
 
   template <int dim, template <int, int> class Container, int spacedim>
-  std::pair<typename Container<dim,spacedim>::active_cell_iterator, Point<dim> >
+  std::pair<typename _active_cell_iterator<dim, Container<dim, spacedim>, spacedim>::_type, Point<dim> >
   find_active_cell_around_point (const Mapping<dim,spacedim>   &mapping,
                                  const Container<dim,spacedim> &container,
                                  const Point<spacedim>     &p)
   {
-    typedef typename Container<dim,spacedim>::active_cell_iterator active_cell_iterator;
+    typedef typename _active_cell_iterator<dim, Container<dim, spacedim>, spacedim>::_type active_cell_iterator;
 
     // The best distance is set to the
     // maximum allowable distance from
@@ -1367,7 +1367,7 @@ next_cell:
     std::map< std::pair<unsigned int,unsigned int>, unsigned int >
     indexmap;
     unsigned int index = 0;
-    for (typename Triangulation<dim,spacedim>::active_cell_iterator
+    for (typename _active_cell_iterator<dim, Triangulation<dim, spacedim>, spacedim>::_type
          cell = triangulation.begin_active();
          cell != triangulation.end(); ++cell, ++index)
       indexmap[std::pair<unsigned int,unsigned int>(cell->level(),cell->index())] = index;
@@ -1389,7 +1389,7 @@ next_cell:
     // add entries in both directions
     // for both cells
     index = 0;
-    for (typename Triangulation<dim,spacedim>::active_cell_iterator
+    for (typename _active_cell_iterator<dim, Triangulation<dim, spacedim>, spacedim>::_type
          cell = triangulation.begin_active();
          cell != triangulation.end(); ++cell, ++index)
       {
@@ -1428,7 +1428,7 @@ next_cell:
     // check for an easy return
     if (n_partitions == 1)
       {
-        for (typename Triangulation<dim,spacedim>::active_cell_iterator
+        for (typename _active_cell_iterator<dim, Triangulation<dim, spacedim>, spacedim>::_type
              cell = triangulation.begin_active();
              cell != triangulation.end(); ++cell)
           cell->set_subdomain_id (0);
@@ -1472,7 +1472,7 @@ next_cell:
     // check for an easy return
     if (n_partitions == 1)
       {
-        for (typename Triangulation<dim,spacedim>::active_cell_iterator
+        for (typename _active_cell_iterator<dim, Triangulation<dim, spacedim>, spacedim>::_type
              cell = triangulation.begin_active();
              cell != triangulation.end(); ++cell)
           cell->set_subdomain_id (0);
@@ -1489,7 +1489,7 @@ next_cell:
     // finally loop over all cells and set the
     // subdomain ids
     unsigned int index = 0;
-    for (typename Triangulation<dim,spacedim>::active_cell_iterator
+    for (typename _active_cell_iterator<dim, Triangulation<dim, spacedim>, spacedim>::_type
          cell = triangulation.begin_active();
          cell != triangulation.end(); ++cell, ++index)
       cell->set_subdomain_id (partition_indices[index]);
@@ -1547,7 +1547,7 @@ next_cell:
     if (const parallel::distributed::Triangulation<dim,spacedim> *tr
         = dynamic_cast<const parallel::distributed::Triangulation<dim,spacedim> *>
         (&triangulation))
-      for (typename Triangulation<dim,spacedim>::active_cell_iterator
+      for (typename _active_cell_iterator<dim, Triangulation<dim, spacedim>, spacedim>::_type
            cell = triangulation.begin_active();
            cell != triangulation.end(); ++cell)
         if (cell->is_artificial()
