@@ -24,7 +24,9 @@
 #include <deal.II/fe/mapping.h>
 #include <deal.II/lac/vector.h>
 #include <deal.II/grid/filtered_iterator.h>
-
+#ifdef _MSC_VER
+#include <deal.II/dofs/dof_accessor.h>
+#endif
 #include <utility>
 
 DEAL_II_NAMESPACE_OPEN

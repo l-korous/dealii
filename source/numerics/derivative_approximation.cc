@@ -753,11 +753,10 @@ namespace DerivativeApproximation
   namespace internal
   {
     /**
-     * Compute the derivative approximation on one cell. This computes the full
-     * derivative tensor.
-     */
-    template <class DerivativeDescription, int dim,
-              template <int, int> class DH, class InputVector, int spacedim>
+    * Compute the derivative approximation on one cell. This computes the full
+    * derivative tensor.
+    */
+    template <class DerivativeDescription, int dim, template <int, int> class DH, class InputVector, int spacedim>
     void
     approximate_cell (const Mapping<dim,spacedim>                   &mapping,
                       const DH<dim,spacedim>                        &dof_handler,
@@ -847,13 +846,13 @@ namespace DerivativeApproximation
 #ifndef _MSC_VER
       typename std::vector<typename DH<dim, spacedim>::active_cell_iterator>::const_iterator
 #else
-        typename std::vector<TriaActiveIterator < dealii::DoFCellAccessor < DH < dim, spacedim >, false > > >::const_iterator
+      typename std::vector<TriaActiveIterator < dealii::DoFCellAccessor < DH < dim, spacedim >, false > > >::const_iterator
 #endif
       neighbor_ptr = active_neighbors.begin();
       for (; neighbor_ptr!=active_neighbors.end(); ++neighbor_ptr)
         {
 #ifndef _MSC_VER
-        const typename DH<dim, spacedim>::active_cell_iterator
+          const typename DH<dim, spacedim>::active_cell_iterator
 #else
           const TriaActiveIterator < dealii::DoFCellAccessor < DH < dim, spacedim >, false > >
 #endif
@@ -949,14 +948,14 @@ namespace DerivativeApproximation
     void
     approximate(
 #ifndef _MSC_VER
-    SynchronousIterators<std_cxx11::tuple<typename DH<dim, spacedim>::active_cell_iterator, Vector<float>::iterator> > const &cell,
+      SynchronousIterators<std_cxx11::tuple<typename DH<dim, spacedim>::active_cell_iterator, Vector<float>::iterator> > const &cell,
 #else
-    SynchronousIterators<std_cxx11::tuple<TriaActiveIterator < dealii::DoFCellAccessor < DH < dim, spacedim >, false > >, Vector<float>::iterator> > const &cell,
+      SynchronousIterators<std_cxx11::tuple<TriaActiveIterator < dealii::DoFCellAccessor < DH < dim, spacedim >, false > >, Vector<float>::iterator> > const &cell,
 #endif
-                const Mapping<dim,spacedim>                  &mapping,
-                const DH<dim,spacedim>                       &dof_handler,
-                const InputVector                            &solution,
-                const unsigned int                            component)
+      const Mapping<dim,spacedim>                  &mapping,
+      const DH<dim,spacedim>                       &dof_handler,
+      const InputVector                            &solution,
+      const unsigned int                            component)
     {
       // if the cell is not locally owned, then there is nothing to do
       if (std_cxx11::get<0>(cell.iterators)->is_locally_owned() == false)
@@ -966,7 +965,7 @@ namespace DerivativeApproximation
           typename DerivativeDescription::Derivative derivative;
           // call the function doing the actual
           // work on this cell
-          approximate_cell<DerivativeDescription,dim,DH,InputVector>
+          approximate_cell<DerivativeDescription,dim,DH,InputVector, spacedim>
           (mapping,dof_handler,solution,component,std_cxx11::get<0>(cell.iterators),derivative);
 
           // evaluate the norm and fill the vector

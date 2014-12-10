@@ -40,35 +40,37 @@ namespace hp
 
 class SparsityPattern;
 
-template<int dim, class Container, int spacedim>
-class _active_cell_iterator
+namespace internal
 {
-public:
-  typedef typename Container::active_cell_iterator _type;
-};
+  template<int dim, int spacedim, class Container>
+  class ActiveCellIterator
+  {
+  public:
+    typedef typename Container::active_cell_iterator type;
+  };
 
-template<int dim, int spacedim>
-class _active_cell_iterator<dim, dealii::DoFHandler<dim, spacedim>, spacedim>
-{
-public:
+  template<int dim, int spacedim>
+  class ActiveCellIterator<dim, spacedim, dealii::DoFHandler<dim, spacedim> >
+  {
+  public:
 #ifndef _MSC_VER
-  typedef typename dealii::DoFHandler<dim, spacedim>::active_cell_iterator _type;
+    typedef typename dealii::DoFHandler<dim, spacedim>::active_cell_iterator _type;
 #else
-  typedef TriaActiveIterator < dealii::DoFCellAccessor < dealii::DoFHandler<dim, spacedim>, false > > _type;
+    typedef TriaActiveIterator < dealii::DoFCellAccessor < dealii::DoFHandler<dim, spacedim>, false > > type;
 #endif
-};
+  };
 
-template<int dim, int spacedim>
-class _active_cell_iterator<dim, dealii::hp::DoFHandler<dim, spacedim>, spacedim>
-{
-public:
+  template<int dim, int spacedim>
+  class ActiveCellIterator<dim, spacedim, dealii::hp::DoFHandler<dim, spacedim> >
+  {
+  public:
 #ifndef _MSC_VER
-  typedef typename dealii::hp::DoFHandler<dim, spacedim>::active_cell_iterator _type;
+    typedef typename dealii::hp::DoFHandler<dim, spacedim>::active_cell_iterator _type;
 #else
-  typedef TriaActiveIterator < dealii::DoFCellAccessor < dealii::hp::DoFHandler<dim, spacedim>, false > > _type;
+    typedef TriaActiveIterator < dealii::DoFCellAccessor < dealii::hp::DoFHandler<dim, spacedim>, false > > type;
 #endif
-};
-
+  };
+}
 
 /**
  * This namespace is a collection of algorithms working on triangulations,
@@ -455,7 +457,7 @@ namespace GridTools
    * to be checked for this case.
    */
   template<int dim, template <int, int> class Container, int spacedim>
-  std::vector<typename _active_cell_iterator<dim, Container<dim, spacedim>, spacedim>::_type>
+  std::vector<typename dealii::internal::ActiveCellIterator<dim, spacedim, Container<dim, spacedim> >::type>
   find_cells_adjacent_to_vertex (const Container<dim,spacedim> &container,
                                  const unsigned int    vertex_index);
 
@@ -492,7 +494,7 @@ namespace GridTools
    * will have to decide what to do in that case.
    */
   template <int dim, template <int,int> class Container, int spacedim>
-  typename _active_cell_iterator<dim, Container<dim, spacedim>, spacedim>::_type
+  typename dealii::internal::ActiveCellIterator<dim, spacedim, Container<dim, spacedim> >::type
   find_active_cell_around_point (const Container<dim,spacedim>  &container,
                                  const Point<spacedim> &p);
 
@@ -543,7 +545,7 @@ namespace GridTools
    * will have to decide what to do in that case.
    */
   template <int dim, template<int, int> class Container, int spacedim>
-  std::pair<typename _active_cell_iterator<dim, Container<dim, spacedim>, spacedim>::_type, Point<dim> >
+  std::pair<typename dealii::internal::ActiveCellIterator<dim, spacedim, Container<dim, spacedim> >::type, Point<dim> >
   find_active_cell_around_point (const Mapping<dim,spacedim>   &mapping,
                                  const Container<dim,spacedim> &container,
                                  const Point<spacedim>     &p);
