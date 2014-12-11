@@ -54,7 +54,7 @@ namespace internal
   {
   public:
 #ifndef _MSC_VER
-    typedef typename dealii::DoFHandler<dim, spacedim>::active_cell_iterator _type;
+    typedef typename dealii::DoFHandler<dim, spacedim>::active_cell_iterator type;
 #else
     typedef TriaActiveIterator < dealii::DoFCellAccessor < dealii::DoFHandler<dim, spacedim>, false > > type;
 #endif
@@ -65,7 +65,7 @@ namespace internal
   {
   public:
 #ifndef _MSC_VER
-    typedef typename dealii::hp::DoFHandler<dim, spacedim>::active_cell_iterator _type;
+    typedef typename dealii::hp::DoFHandler<dim, spacedim>::active_cell_iterator type;
 #else
     typedef TriaActiveIterator < dealii::DoFCellAccessor < dealii::hp::DoFHandler<dim, spacedim>, false > > type;
 #endif
