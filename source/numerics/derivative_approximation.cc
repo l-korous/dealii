@@ -762,11 +762,7 @@ namespace DerivativeApproximation
                       const DH<dim,spacedim>                        &dof_handler,
                       const InputVector                             &solution,
                       const unsigned int                             component,
-#ifndef _MSC_VER
-                      const typename DH<dim,spacedim>::active_cell_iterator  &cell,
-#else
                       const TriaActiveIterator < dealii::DoFCellAccessor < DH < dim, spacedim >, false > >  &cell,
-#endif
                       typename DerivativeDescription::Derivative    &derivative)
     {
       QMidpoint<dim> midpoint_rule;
@@ -795,12 +791,7 @@ namespace DerivativeApproximation
       // active neighbors of a cell
       // reserve the maximal number of
       // active neighbors
-
-#ifndef _MSC_VER
-      std::vector<typename DH<dim,spacedim>::active_cell_iterator> active_neighbors;
-#else
       std::vector<TriaActiveIterator < dealii::DoFCellAccessor < DH < dim, spacedim >, false > > > active_neighbors;
-#endif
 
       active_neighbors.reserve (GeometryInfo<dim>::faces_per_cell *
                                 GeometryInfo<dim>::max_children_per_face);
@@ -843,19 +834,11 @@ namespace DerivativeApproximation
       // now loop over all active
       // neighbors and collect the
       // data we need
-#ifndef _MSC_VER
-      typename std::vector<typename DH<dim, spacedim>::active_cell_iterator>::const_iterator
-#else
       typename std::vector<TriaActiveIterator < dealii::DoFCellAccessor < DH < dim, spacedim >, false > > >::const_iterator
-#endif
       neighbor_ptr = active_neighbors.begin();
       for (; neighbor_ptr!=active_neighbors.end(); ++neighbor_ptr)
         {
-#ifndef _MSC_VER
-          const typename DH<dim, spacedim>::active_cell_iterator
-#else
           const TriaActiveIterator < dealii::DoFCellAccessor < DH < dim, spacedim >, false > >
-#endif
           neighbor = *neighbor_ptr;
 
           // reinit fe values object...
@@ -947,11 +930,7 @@ namespace DerivativeApproximation
               template <int, int> class DH, class InputVector, int spacedim>
     void
     approximate(
-#ifndef _MSC_VER
-      SynchronousIterators<std_cxx11::tuple<typename DH<dim, spacedim>::active_cell_iterator, Vector<float>::iterator> > const &cell,
-#else
       SynchronousIterators<std_cxx11::tuple<TriaActiveIterator < dealii::DoFCellAccessor < DH < dim, spacedim >, false > >, Vector<float>::iterator> > const &cell,
-#endif
       const Mapping<dim,spacedim>                  &mapping,
       const DH<dim,spacedim>                       &dof_handler,
       const InputVector                            &solution,
@@ -1000,11 +979,7 @@ namespace DerivativeApproximation
       Assert (component < dof_handler.get_fe().n_components(),
               ExcIndexRange (component, 0, dof_handler.get_fe().n_components()));
 
-#ifndef _MSC_VER
-      typedef std_cxx11::tuple<typename DH<dim, spacedim>::active_cell_iterator, Vector<float>::iterator>
-#else
       typedef std_cxx11::tuple<TriaActiveIterator < dealii::DoFCellAccessor < DH < dim, spacedim >, false > >, Vector<float>::iterator>
-#endif
       Iterators;
       SynchronousIterators<Iterators> begin(Iterators(dof_handler.begin_active(),
                                                       derivative_norm.begin())),
