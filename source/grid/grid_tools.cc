@@ -910,7 +910,11 @@ namespace GridTools
 
 
   template<int dim, template<int, int> class Container, int spacedim>
+#ifndef _MSC_VER
+  std::vector<typename Container<dim, spacedim>::active_cell_iterator>
+#else
   std::vector<typename dealii::internal::ActiveCellIterator<dim, spacedim, Container<dim, spacedim> >::type>
+#endif
   find_cells_adjacent_to_vertex(const Container<dim,spacedim> &container,
                                 const unsigned int    vertex)
   {
@@ -1049,10 +1053,19 @@ next_cell:
   {
     template <int dim, template<int, int> class Container, int spacedim>
     void find_active_cell_around_point_internal(const Container<dim,spacedim> &container,
+#ifndef _MSC_VER
+                                                std::set<typename Container<dim, spacedim>::active_cell_iterator> &searched_cells,
+                                                std::set<typename Container<dim, spacedim>::active_cell_iterator> &adjacent_cells)
+#else
                                                 std::set<typename dealii::internal::ActiveCellIterator<dim, spacedim, Container<dim, spacedim> >::type> &searched_cells,
                                                 std::set<typename dealii::internal::ActiveCellIterator<dim, spacedim, Container<dim, spacedim> >::type> &adjacent_cells)
+#endif
     {
+#ifndef _MSC_VER
+      typedef typename Container<dim, spacedim>::active_cell_iterator cell_iterator;
+#else
       typedef typename dealii::internal::ActiveCellIterator<dim, spacedim, Container<dim, spacedim> >::type cell_iterator;
+#endif
 
       // update the searched cells
       searched_cells.insert(adjacent_cells.begin(), adjacent_cells.end());
@@ -1094,7 +1107,11 @@ next_cell:
   }
 
   template <int dim, template<int, int> class Container, int spacedim>
+#ifndef _MSC_VER
+  typename Container<dim, spacedim>::active_cell_iterator
+#else
   typename dealii::internal::ActiveCellIterator<dim, spacedim, Container<dim, spacedim> >::type
+#endif
   find_active_cell_around_point (const Container<dim,spacedim>  &container,
                                  const Point<spacedim> &p)
   {
@@ -1106,7 +1123,11 @@ next_cell:
 
 
   template <int dim, template <int, int> class Container, int spacedim>
+#ifndef _MSC_VER
+  std::pair<typename Container<dim, spacedim>::active_cell_iterator, Point<dim> >
+#else
   std::pair<typename dealii::internal::ActiveCellIterator<dim, spacedim, Container<dim, spacedim> >::type, Point<dim> >
+#endif
   find_active_cell_around_point (const Mapping<dim,spacedim>   &mapping,
                                  const Container<dim,spacedim> &container,
                                  const Point<spacedim>     &p)

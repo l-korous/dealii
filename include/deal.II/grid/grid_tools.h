@@ -457,7 +457,11 @@ namespace GridTools
    * to be checked for this case.
    */
   template<int dim, template <int, int> class Container, int spacedim>
+#ifndef _MSC_VER
+  std::vector<typename Container<dim, spacedim>::active_cell_iterator>
+#else
   std::vector<typename dealii::internal::ActiveCellIterator<dim, spacedim, Container<dim, spacedim> >::type>
+#endif
   find_cells_adjacent_to_vertex (const Container<dim,spacedim> &container,
                                  const unsigned int    vertex_index);
 
@@ -494,7 +498,11 @@ namespace GridTools
    * will have to decide what to do in that case.
    */
   template <int dim, template <int,int> class Container, int spacedim>
+#ifndef _MSC_VER
+  typename Container<dim,spacedim>::active_cell_iterator
+#else
   typename dealii::internal::ActiveCellIterator<dim, spacedim, Container<dim, spacedim> >::type
+#endif
   find_active_cell_around_point (const Container<dim,spacedim>  &container,
                                  const Point<spacedim> &p);
 
@@ -545,7 +553,11 @@ namespace GridTools
    * will have to decide what to do in that case.
    */
   template <int dim, template<int, int> class Container, int spacedim>
+#ifndef _MSC_VER
+  std::pair<typename Container<dim, spacedim>::active_cell_iterator, Point<dim> >
+#else
   std::pair<typename dealii::internal::ActiveCellIterator<dim, spacedim, Container<dim, spacedim> >::type, Point<dim> >
+#endif
   find_active_cell_around_point (const Mapping<dim,spacedim>   &mapping,
                                  const Container<dim,spacedim> &container,
                                  const Point<spacedim>     &p);
