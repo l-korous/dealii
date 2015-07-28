@@ -111,7 +111,8 @@ namespace MeshWorker
      * Constructor leaving the #block_info pointer empty, but setting the
      * #aux_local_indices.
      */
-    DoFInfo (const DoFHandler<dim, spacedim> &dof_handler);
+    DoFInfo(const DoFHandler<dim, spacedim> &dof_handler);
+    DoFInfo(const hp::DoFHandler<dim, spacedim> &dof_handler);
 
     /**
      * Set the current cell and fill @p indices.
@@ -272,12 +273,22 @@ namespace MeshWorker
 //----------------------------------------------------------------------//
 
   template <int dim, int spacedim, typename number>
-  DoFInfo<dim,spacedim,number>::DoFInfo(const DoFHandler<dim,spacedim> &dof_handler)
+  DoFInfo<dim, spacedim, number>::DoFInfo(const dealii::DoFHandler<dim, spacedim> &dof_handler)
     :
-    level_cell (false)
+    level_cell(false)
   {
     std::vector<types::global_dof_index> aux(1);
     aux[0] = dof_handler.get_fe().dofs_per_cell;
+    aux_local_indices.reinit(aux);
+  }
+
+  template <int dim, int spacedim, typename number>
+  DoFInfo<dim, spacedim, number>::DoFInfo(const dealii::hp::DoFHandler<dim, spacedim> &dof_handler)
+    :
+    level_cell(false)
+  {
+    std::vector<types::global_dof_index> aux(1);
+    aux[0] = dof_handler.get_fe().max_dofs_per_cell();
     aux_local_indices.reinit(aux);
   }
 
