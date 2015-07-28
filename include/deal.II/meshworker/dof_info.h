@@ -111,8 +111,13 @@ namespace MeshWorker
      * Constructor leaving the #block_info pointer empty, but setting the
      * #aux_local_indices.
      */
-    DoFInfo(const DoFHandler<dim, spacedim> &dof_handler);
-    DoFInfo(const hp::DoFHandler<dim, spacedim> &dof_handler);
+    explicit DoFInfo(const DoFHandler<dim, spacedim> &dof_handler);
+
+    /**
+    * Constructor leaving the #block_info pointer empty, but setting the
+    * #aux_local_indices.
+    */
+    explicit DoFInfo(const hp::DoFHandler<dim, spacedim> &dof_handler);
 
     /**
      * Set the current cell and fill @p indices.
