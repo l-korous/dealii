@@ -94,7 +94,7 @@ IF(CMAKE_SYSTEM_NAME MATCHES "Darwin")
   # At least on Clang 5.0.0 the template depth is set to 128, which is too low
   # to compile parts of the library. Fix this by setting a large value.
   #
-  ENABLE_IF_SUPPORTED(DEAL_II_CXX_FLAGS "-ftemplate-depth=1024")  
+  ENABLE_IF_SUPPORTED(DEAL_II_CXX_FLAGS "-ftemplate-depth=1024")
 ENDIF()
 
 
@@ -105,51 +105,18 @@ ENDIF()
 #                                                                      #
 ########################################################################
 
-
-IF( CMAKE_SYSTEM_NAME MATCHES "CYGWIN"
-    OR CMAKE_SYSTEM_NAME MATCHES "Windows" )
-  IF( CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND
-      CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.8" )
-
-    #
-    # Print a warning if we have a gcc port that is older than gcc-4.8:
-    #
-
-    MESSAGE(WARNING "\n"
-      "GCC ports (Cygwin, MinGW-w64, or MinGW) older than version 4.8 are unsupported on Windows\n\n"
+#
+# Put an end to user's suffering from cygwin's defects
+#
+IF( CMAKE_SYSTEM_NAME MATCHES "CYGWIN" OR
+    CMAKE_SYSTEM_NAME MATCHES "Windows" )
+  IF(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    MESSAGE(FATAL_ERROR
+      "\nCygwin and forks such as MinGW and MinGW-64 are unsupported due to "
+      "multiple unresolved miscompilation issues.\n\n"
       )
-
-  ELSE()
-
-    #
-    # Workaround for a compiler bug on Windows platforms with modern gcc:
-    #
-    # GCC seems to have a hard time with
-    #
-    #   next_free_pair_object and next_free_single_object
-    #
-    # defined in tria_objects.h. It might explode in one ot the following ways:
-    #  a) Internal compiler error
-    #  b) emition of a truncated external symbol
-    #  c) "template <...>::dimension could not be converted to 'int'"
-    #
-    # It seems to help to specify "-ggdb" also for optimized mode.
-    #
-    # TODO: Track down bug and fix properly (just kidding).
-    #
-    # Maier, 2013
-    #
-
-    ENABLE_IF_SUPPORTED(DEAL_II_CXX_FLAGS_RELEASE "-g")
-    ENABLE_IF_SUPPORTED(DEAL_II_LINKER_FLAGS_RELEASE "-g")
-    REPLACE_FLAG(DEAL_II_CXX_FLAGS_DEBUG "-Og" "-O1")
-    REPLACE_FLAG(DEAL_II_CXX_FLAGS_DEBUG "-O0" "-O1")
-    REPLACE_FLAG(DEAL_II_CXX_FLAGS_DEBUG "-ggdb" "-g")
-    REPLACE_FLAG(DEAL_II_LINKER_FALGS_DEBUG "-ggdb" "-g")
-
   ENDIF()
 ENDIF()
-
 
 IF(CMAKE_SYSTEM_NAME MATCHES "Windows")
 

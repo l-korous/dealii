@@ -228,55 +228,61 @@ public:
 
 protected:
   virtual
-  typename Mapping<1,spacedim>::InternalDataBase *
+  typename FiniteElement<1,spacedim>::InternalDataBase *
   get_data (const UpdateFlags,
             const Mapping<1,spacedim> &mapping,
             const Quadrature<1> &quadrature) const;
 
-  typename Mapping<1,spacedim>::InternalDataBase *
+  typename FiniteElement<1,spacedim>::InternalDataBase *
   get_face_data (const UpdateFlags,
                  const Mapping<1,spacedim> &mapping,
                  const Quadrature<0> &quadrature) const;
 
-  typename Mapping<1,spacedim>::InternalDataBase *
+  typename FiniteElement<1,spacedim>::InternalDataBase *
   get_subface_data (const UpdateFlags,
                     const Mapping<1,spacedim> &mapping,
                     const Quadrature<0> &quadrature) const;
 
-  virtual void
-  fill_fe_values (const Mapping<1,spacedim>                           &mapping,
+  virtual
+  void
+  fill_fe_values (const Mapping<1,spacedim>                              &mapping,
                   const typename Triangulation<1,spacedim>::cell_iterator &cell,
-                  const Quadrature<1>                                 &quadrature,
-                  const typename Mapping<1,spacedim>::InternalDataBase      &mapping_internal,
-                  const typename Mapping<1,spacedim>::InternalDataBase      &fe_internal,
-                  FEValuesData<1,spacedim>                            &data,
-                  const CellSimilarity::Similarity                       cell_similarity) const;
+                  const Quadrature<1>                                     &quadrature,
+                  const typename Mapping<1,spacedim>::InternalDataBase    &mapping_internal,
+                  const typename FiniteElement<1,spacedim>::InternalDataBase    &fe_internal,
+                  const internal::FEValues::MappingRelatedData<1,spacedim> &mapping_data,
+                  internal::FEValues::FiniteElementRelatedData<1,spacedim> &output_data,
+                  const CellSimilarity::Similarity                          cell_similarity) const;
 
-  virtual void
-  fill_fe_face_values (const Mapping<1,spacedim> &mapping,
+  virtual
+  void
+  fill_fe_face_values (const Mapping<1,spacedim>                               &mapping,
                        const typename Triangulation<1,spacedim>::cell_iterator &cell,
-                       const unsigned int                    face_no,
-                       const Quadrature<0>                &quadrature,
-                       const typename Mapping<1,spacedim>::InternalDataBase      &mapping_internal,
-                       const typename Mapping<1,spacedim>::InternalDataBase      &fe_internal,
-                       FEValuesData<1,spacedim> &data) const;
+                       const unsigned int                                         face_no,
+                       const Quadrature<0>                                   &quadrature,
+                       const typename Mapping<1,spacedim>::InternalDataBase    &mapping_internal,
+                       const typename FiniteElement<1,spacedim>::InternalDataBase    &fe_internal,
+                       const internal::FEValues::MappingRelatedData<1,spacedim> &mapping_data,
+                       internal::FEValues::FiniteElementRelatedData<1,spacedim> &output_data) const;
 
-  virtual void
-  fill_fe_subface_values (const Mapping<1,spacedim> &mapping,
+  virtual
+  void
+  fill_fe_subface_values (const Mapping<1,spacedim>                               &mapping,
                           const typename Triangulation<1,spacedim>::cell_iterator &cell,
-                          const unsigned int                    face_no,
-                          const unsigned int                    sub_no,
-                          const Quadrature<0>                &quadrature,
-                          const typename Mapping<1,spacedim>::InternalDataBase      &mapping_internal,
-                          const typename Mapping<1,spacedim>::InternalDataBase      &fe_internal,
-                          FEValuesData<1,spacedim> &data) const;
+                          const unsigned int                                         face_no,
+                          const unsigned int                                         sub_no,
+                          const Quadrature<0>                                   &quadrature,
+                          const typename Mapping<1,spacedim>::InternalDataBase    &mapping_internal,
+                          const typename FiniteElement<1,spacedim>::InternalDataBase    &fe_internal,
+                          const internal::FEValues::MappingRelatedData<1,spacedim> &mapping_data,
+                          internal::FEValues::FiniteElementRelatedData<1,spacedim> &output_data) const;
 
 
   /**
    * Determine the values that need to be computed on the unit cell to be able
    * to compute all values required by <tt>flags</tt>.
    *
-   * For the purpuse of this function, refer to the documentation in
+   * For the purpose of this function, refer to the documentation in
    * FiniteElement.
    *
    * This class assumes that shape functions of this FiniteElement do
@@ -292,7 +298,7 @@ protected:
    * Determine the values that need to be computed on every cell to be able to
    * compute all values required by <tt>flags</tt>.
    *
-   * For the purpuse of this function, refer to the documentation in
+   * For the purpose of this function, refer to the documentation in
    * FiniteElement.
    *
    * This class assumes that shape functions of this FiniteElement do

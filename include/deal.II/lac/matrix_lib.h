@@ -189,7 +189,7 @@ public:
   void vmult (VECTOR &w, const VECTOR &v) const;
 
   /**
-   * Tranposed matrix-vector product.
+   * Transposed matrix-vector product.
    */
   void Tvmult (VECTOR &w, const VECTOR &v) const;
 
@@ -312,7 +312,7 @@ private:
  * a vector $\mathbf v$ and $\frac 1n {\mathbf 1}_n$ yields the <i>mean
  * value</i> of the entries of ${\mathbf v}$. Consequently, $ \left[I-\frac
  * 1n{\mathbf 1}_n{\mathbf 1}_n^T\right] \mathbf v = \mathbf v - \left[\frac
- * 1n \mathbf v} \cdot {\mathbf 1}_n\right]{\mathbf 1}_n$ subtracts from every
+ * 1n {\mathbf v} \cdot {\mathbf 1}_n\right]{\mathbf 1}_n$ subtracts from every
  * vector element the mean value of all elements.
  *
  * @author Guido Kanschat, 2002, 2003
@@ -365,7 +365,7 @@ public:
               const BlockVector<number> &src) const;
 
   /**
-   * Add a soruce to dest, where the mean value in the selected component is
+   * Add a source to dest, where the mean value in the selected component is
    * subtracted.
    */
   template <typename number>

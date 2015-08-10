@@ -44,9 +44,10 @@ inconvenience this causes.
   functions has been changed, in an effort to clarify which of these contain
   input information and which contain output information for these functions.
   The same has been done for the corresponding functions in the Mapping
-  class hierarchy.
+  class hierarchy. As part of a general overhaul, the FEValuesData class
+  has also been removed.
   <br>
-  (Wolfgang Bangerth, 2015/07/20)
+  (Wolfgang Bangerth, 2015/07/20-2015/08/06)
   </li>
 
   <li> Changed: The function DoFRenumbering::random() now produces different
@@ -66,6 +67,13 @@ inconvenience this causes.
 
 <ol>
 
+  <li> New: MultithreadInfo::set_thread_limit() can now be called more than
+  once and the environment variable DEAL_II_NUM_THREADS will be respected
+  even if user code never calls it.
+  <br>
+  (Timo Heister, 2015/07/26)
+  </li>
+
   <li> New: IndexSet now implements iterators.
   <br>
   (Timo Heister, 2015/07/12)
@@ -82,6 +90,40 @@ inconvenience this causes.
 
 
 <ol>
+  <li> New: FEFaceValues and FESubfaceValues can now also compute
+  gradients of the Jacobian of the transformation from unit to real cell,
+  controlled by update_jacobian_grads.
+  <br>
+  (Martin Kronbichler, 2015/08/08)
+  </li>
+
+  <li> New: There is now a function MemoryConsumption::memory_consumption()
+  for std_cxx11::unique_ptr arguments.
+  <br>
+  (Wolfgang Bangerth, 2015/08/07)
+  </li>
+
+  <li> New: VtkFlags now stores a parameter describing the compression level
+  zlib uses when writing compressed output. For small problems, the flag
+  ZlibCompressionLevel::best_speed can make the call to write_vtu many times
+  faster.
+  <br>
+  (David Wells, 2015/08/03)
+  </li>
+
+  <li> Improved: The conversion Epetra_Map -> IndexSet is now an O(1)
+  operation for contiguous index ranges, improving over the old O(N) behavior.
+  <br>
+  (Martin Kronbichler, 2015/07/30)
+  </li>
+
+  <li> Changed: The initialization methods of TrilinosWrappers::SparseMatrix,
+  TrilinosWrappers::BlockSparseMatrix, TrilinosWrappers::SparsityPattern, and
+  TrilinosWrappers::BlockSparsityPattern with Epetra_Map arguments have been
+  marked as deprecated. Use the functions with IndexSet argument instead.
+  <br>
+  (Martin Kronbichler, Luca Heltai, 2015/07/30)
+  </li>
 
   <li> New: FESystem now does some work in parallel if your system
   has multiple processors.

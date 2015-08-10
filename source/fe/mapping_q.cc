@@ -199,11 +199,26 @@ MappingQ<dim,spacedim>::get_data (const UpdateFlags update_flags,
                                   const Quadrature<dim> &quadrature) const
 {
   InternalData *data = new InternalData(n_shape_functions);
-  this->compute_data (update_flags, quadrature,
-                      quadrature.size(), *data);
+
+  // fill the data of both the Q_p and the Q_1 objects in parallel
+  Threads::TaskGroup<> tasks;
+  tasks += Threads::new_task (std_cxx11::function<void()>
+                              (std_cxx11::bind(&MappingQ<dim,spacedim>::compute_data,
+                                               this,
+                                               update_flags,
+                                               std_cxx11::cref(quadrature),
+                                               quadrature.size(),
+                                               std_cxx11::ref(*data))));
   if (!use_mapping_q_on_all_cells)
-    this->compute_data (update_flags, quadrature,
-                        quadrature.size(), data->mapping_q1_data);
+    tasks += Threads::new_task (std_cxx11::function<void()>
+                                (std_cxx11::bind(&MappingQ<dim,spacedim>::compute_data,
+                                                 this,
+                                                 update_flags,
+                                                 std_cxx11::cref(quadrature),
+                                                 quadrature.size(),
+                                                 std_cxx11::ref(data->mapping_q1_data))));
+  tasks.join_all ();
+
   return data;
 }
 
@@ -216,12 +231,26 @@ MappingQ<dim,spacedim>::get_face_data (const UpdateFlags update_flags,
 {
   InternalData *data = new InternalData(n_shape_functions);
   const Quadrature<dim> q (QProjector<dim>::project_to_all_faces(quadrature));
-  this->compute_face_data (update_flags, q,
-                           quadrature.size(), *data);
+
+  // fill the data of both the Q_p and the Q_1 objects in parallel
+  Threads::TaskGroup<> tasks;
+  tasks += Threads::new_task (std_cxx11::function<void()>
+                              (std_cxx11::bind(&MappingQ<dim,spacedim>::compute_face_data,
+                                               this,
+                                               update_flags,
+                                               std_cxx11::cref(q),
+                                               quadrature.size(),
+                                               std_cxx11::ref(*data))));
   if (!use_mapping_q_on_all_cells)
-    this->compute_face_data (update_flags, q,
-                             quadrature.size(),
-                             data->mapping_q1_data);
+    tasks += Threads::new_task (std_cxx11::function<void()>
+                                (std_cxx11::bind(&MappingQ<dim,spacedim>::compute_face_data,
+                                                 this,
+                                                 update_flags,
+                                                 std_cxx11::cref(q),
+                                                 quadrature.size(),
+                                                 std_cxx11::ref(data->mapping_q1_data))));
+  tasks.join_all ();
+
   return data;
 }
 
@@ -234,17 +263,31 @@ MappingQ<dim,spacedim>::get_subface_data (const UpdateFlags update_flags,
 {
   InternalData *data = new InternalData(n_shape_functions);
   const Quadrature<dim> q (QProjector<dim>::project_to_all_subfaces(quadrature));
-  this->compute_face_data (update_flags, q,
-                           quadrature.size(), *data);
+
+  // fill the data of both the Q_p and the Q_1 objects in parallel
+  Threads::TaskGroup<> tasks;
+  tasks += Threads::new_task (std_cxx11::function<void()>
+                              (std_cxx11::bind(&MappingQ<dim,spacedim>::compute_face_data,
+                                               this,
+                                               update_flags,
+                                               std_cxx11::cref(q),
+                                               quadrature.size(),
+                                               std_cxx11::ref(*data))));
   if (!use_mapping_q_on_all_cells)
-    this->compute_face_data (update_flags, q,
-                             quadrature.size(),
-                             data->mapping_q1_data);
+    tasks += Threads::new_task (std_cxx11::function<void()>
+                                (std_cxx11::bind(&MappingQ<dim,spacedim>::compute_face_data,
+                                                 this,
+                                                 update_flags,
+                                                 std_cxx11::cref(q),
+                                                 quadrature.size(),
+                                                 std_cxx11::ref(data->mapping_q1_data))));
+  tasks.join_all ();
+
   return data;
 }
 
 
-// Note that the CellSimilarity flag is modifyable, since MappingQ can need to
+// Note that the CellSimilarity flag is modifiable, since MappingQ can need to
 // recalculate data even when cells are similar.
 template<int dim, int spacedim>
 CellSimilarity::Similarity
@@ -253,7 +296,7 @@ fill_fe_values (const typename Triangulation<dim,spacedim>::cell_iterator &cell,
                 const CellSimilarity::Similarity                           cell_similarity,
                 const Quadrature<dim>                                     &quadrature,
                 const typename Mapping<dim,spacedim>::InternalDataBase    &internal_data,
-                FEValuesData<dim,spacedim>                                &output_data) const
+                internal::FEValues::MappingRelatedData<dim,spacedim>      &output_data) const
 {
   // convert data object to internal data for this class. fails with an
   // exception if that is not possible
@@ -306,7 +349,7 @@ fill_fe_face_values (const typename Triangulation<dim,spacedim>::cell_iterator &
                      const unsigned int                                         face_no,
                      const Quadrature<dim-1>                                   &quadrature,
                      const typename Mapping<dim,spacedim>::InternalDataBase    &internal_data,
-                     FEValuesData<dim,spacedim>                                &output_data) const
+                     internal::FEValues::MappingRelatedData<dim,spacedim>      &output_data) const
 {
   // convert data object to internal data for this class. fails with an
   // exception if that is not possible
@@ -320,35 +363,23 @@ fill_fe_face_values (const typename Triangulation<dim,spacedim>::cell_iterator &
   // is in the interior, as the mapping on the face depends on the mapping of
   // the cell, which in turn depends on the fact whether _any_ of the faces of
   // this cell is at the boundary, not only the present face
-  data.use_mapping_q1_on_current_cell=!(use_mapping_q_on_all_cells
-                                        || cell->has_boundary_lines());
+  data.use_mapping_q1_on_current_cell = !(use_mapping_q_on_all_cells
+                                          || cell->has_boundary_lines());
 
   // depending on this result, use this or the other data object for the
-  // mapping
+  // mapping and call the function in the base class with this
+  // data object to do the work
   const typename MappingQ1<dim,spacedim>::InternalData *p_data
     = (data.use_mapping_q1_on_current_cell
        ?
        &data.mapping_q1_data
        :
        &data);
-
-  const unsigned int n_q_points = quadrature.size();
-  this->compute_fill_face (cell, face_no, numbers::invalid_unsigned_int,
-                           n_q_points,
-                           QProjector<dim>::DataSetDescriptor::
-                           face (face_no,
-                                 cell->face_orientation(face_no),
-                                 cell->face_flip(face_no),
-                                 cell->face_rotation(face_no),
-                                 n_q_points),
-                           quadrature.get_weights(),
-                           *p_data,
-                           output_data.quadrature_points,
-                           output_data.JxW_values,
-                           output_data.boundary_forms,
-                           output_data.normal_vectors,
-                           output_data.jacobians,
-                           output_data.inverse_jacobians);
+  MappingQ1<dim,spacedim>::fill_fe_face_values(cell,
+                                               face_no,
+                                               quadrature,
+                                               *p_data,
+                                               output_data);
 }
 
 
@@ -360,7 +391,7 @@ fill_fe_subface_values (const typename Triangulation<dim,spacedim>::cell_iterato
                         const unsigned int                                         subface_no,
                         const Quadrature<dim-1>                                   &quadrature,
                         const typename Mapping<dim,spacedim>::InternalDataBase    &internal_data,
-                        FEValuesData<dim,spacedim>                                &output_data) const
+                        internal::FEValues::MappingRelatedData<dim,spacedim>      &output_data) const
 {
   // convert data object to internal data for this class. fails with an
   // exception if that is not possible
@@ -374,36 +405,24 @@ fill_fe_subface_values (const typename Triangulation<dim,spacedim>::cell_iterato
   // is in the interior, as the mapping on the face depends on the mapping of
   // the cell, which in turn depends on the fact whether _any_ of the faces of
   // this cell is at the boundary, not only the present face
-  data.use_mapping_q1_on_current_cell=!(use_mapping_q_on_all_cells
-                                        || cell->has_boundary_lines());
+  data.use_mapping_q1_on_current_cell = !(use_mapping_q_on_all_cells
+                                          || cell->has_boundary_lines());
 
   // depending on this result, use this or the other data object for the
-  // mapping
+  // mapping and call the function in the base class with this
+  // data object to do the work
   const typename MappingQ1<dim,spacedim>::InternalData *p_data
     = (data.use_mapping_q1_on_current_cell
        ?
        &data.mapping_q1_data
        :
        &data);
-
-  const unsigned int n_q_points = quadrature.size();
-  this->compute_fill_face (cell, face_no, subface_no,
-                           n_q_points,
-                           QProjector<dim>::DataSetDescriptor::
-                           subface (face_no, subface_no,
-                                    cell->face_orientation(face_no),
-                                    cell->face_flip(face_no),
-                                    cell->face_rotation(face_no),
-                                    n_q_points,
-                                    cell->subface_case(face_no)),
-                           quadrature.get_weights(),
-                           *p_data,
-                           output_data.quadrature_points,
-                           output_data.JxW_values,
-                           output_data.boundary_forms,
-                           output_data.normal_vectors,
-                           output_data.jacobians,
-                           output_data.inverse_jacobians);
+  MappingQ1<dim,spacedim>::fill_fe_subface_values(cell,
+                                                  face_no,
+                                                  subface_no,
+                                                  quadrature,
+                                                  *p_data,
+                                                  output_data);
 }
 
 

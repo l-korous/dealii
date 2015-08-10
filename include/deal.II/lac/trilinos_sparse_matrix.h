@@ -441,7 +441,7 @@ namespace TrilinosWrappers
    *
    * The interface of this class is modeled after the existing SparseMatrix
    * class in deal.II. It has almost the same member functions, and is often
-   * exchangable. However, since Trilinos only supports a single scalar type
+   * exchangeable. However, since Trilinos only supports a single scalar type
    * (double), it is not templated, and only works with doubles.
    *
    * Note that Trilinos only guarantees that operations do what you expect if
@@ -576,7 +576,7 @@ namespace TrilinosWrappers
      * meant for use in serial programs, where there is no need to specify how
      * the matrix is going to be distributed among different processors. This
      * function works in %parallel, too, but it is recommended to manually
-     * specify the %parallel partioning of the matrix using an Epetra_Map.
+     * specify the %parallel partitioning of the matrix using an Epetra_Map.
      * When run in %parallel, it is currently necessary that each processor
      * holds the sparsity_pattern structure because each processor sets its
      * rows.
@@ -660,6 +660,8 @@ namespace TrilinosWrappers
      * However, there is no effect in the performance of matrix-vector
      * products, since Trilinos reorganizes the matrix memory prior to use (in
      * the compress() step).
+     *
+     * @deprecated Use the respective method with IndexSet argument instead.
      */
     SparseMatrix (const Epetra_Map  &parallel_partitioning,
                   const size_type    n_max_entries_per_row = 0) DEAL_II_DEPRECATED;
@@ -670,6 +672,8 @@ namespace TrilinosWrappers
      * case, we can already allocate the right amount of memory, which makes
      * the creation process including the insertion of nonzero elements by the
      * respective SparseMatrix::reinit call considerably faster.
+     *
+     * @deprecated Use the respective method with IndexSet argument instead.
      */
     SparseMatrix (const Epetra_Map                &parallel_partitioning,
                   const std::vector<unsigned int> &n_entries_per_row) DEAL_II_DEPRECATED;
@@ -689,6 +693,8 @@ namespace TrilinosWrappers
      *
      * The integer input @p n_max_entries_per_row defines the number of
      * columns entries per row that will be allocated.
+     *
+     * @deprecated Use the respective method with IndexSet argument instead.
      */
     SparseMatrix (const Epetra_Map &row_parallel_partitioning,
                   const Epetra_Map &col_parallel_partitioning,
@@ -707,6 +713,8 @@ namespace TrilinosWrappers
      * rather, all column elements of a row are stored on the same processor
      * in any case. The vector <tt>n_entries_per_row</tt> specifies the number
      * of entries in each row of the newly generated matrix.
+     *
+     * @deprecated Use the respective method with IndexSet argument instead.
      */
     SparseMatrix (const Epetra_Map                &row_parallel_partitioning,
                   const Epetra_Map                &col_parallel_partitioning,
@@ -719,7 +727,7 @@ namespace TrilinosWrappers
      * programs following the style of the tutorial programs, this function
      * (and the respective call for a rectangular matrix) are the natural way
      * to initialize the matrix size, its distribution among the MPI processes
-     * (if run in %parallel) as well as the locatoin of non-zero elements.
+     * (if run in %parallel) as well as the location of non-zero elements.
      * Trilinos stores the sparsity pattern internally, so it won't be needed
      * any more after this call, in contrast to the deal.II own object. The
      * optional argument @p exchange_data can be used for reinitialization
@@ -735,6 +743,8 @@ namespace TrilinosWrappers
      *
      * This is a collective operation that needs to be called on all
      * processors in order to avoid a dead lock.
+     *
+     * @deprecated Use the respective method with IndexSet argument instead.
      */
     template<typename SparsityType>
     void reinit (const Epetra_Map    &parallel_partitioning,
@@ -752,6 +762,8 @@ namespace TrilinosWrappers
      *
      * This is a collective operation that needs to be called on all
      * processors in order to avoid a dead lock.
+     *
+     * @deprecated Use the respective method with IndexSet argument instead.
      */
     template<typename SparsityType>
     void reinit (const Epetra_Map    &row_parallel_partitioning,
@@ -774,6 +786,8 @@ namespace TrilinosWrappers
      *
      * This is a collective operation that needs to be called on all
      * processors in order to avoid a dead lock.
+     *
+     * @deprecated Use the respective method with IndexSet argument instead.
      */
     template <typename number>
     void reinit (const Epetra_Map                     &parallel_partitioning,
@@ -794,6 +808,8 @@ namespace TrilinosWrappers
      *
      * This is a collective operation that needs to be called on all
      * processors in order to avoid a dead lock.
+     *
+     * @deprecated Use the respective method with IndexSet argument instead.
      */
     template <typename number>
     void reinit (const Epetra_Map                      &row_parallel_partitioning,
@@ -880,7 +896,7 @@ namespace TrilinosWrappers
      * programs, this function (and the respective call for a rectangular
      * matrix) are the natural way to initialize the matrix size, its
      * distribution among the MPI processes (if run in %parallel) as well as
-     * the locatoin of non-zero elements. Trilinos stores the sparsity pattern
+     * the location of non-zero elements. Trilinos stores the sparsity pattern
      * internally, so it won't be needed any more after this call, in contrast
      * to the deal.II own object. The optional argument @p exchange_data can
      * be used for reinitialization with a sparsity pattern that is not fully
@@ -1096,15 +1112,21 @@ namespace TrilinosWrappers
      *
      * This function is able to insert new elements into the matrix as long as
      * compress() has not been called, so the sparsity pattern will be
-     * extended. When compress() is called for the first time, then this is no
-     * longer possible and an insertion of elements at positions which have
-     * not been initialized will throw an exception. Note that in case
-     * elements need to be inserted, it is mandatory that elements are
-     * inserted only once. Otherwise, the elements will actually be added in
-     * the end (since it is not possible to efficiently find values to the
-     * same entry before compress() has been called). In the case that an
-     * element is set more than once, initialize the matrix with a sparsity
-     * pattern first.
+     * extended. When compress() is called for the first time (or in case the
+     * matrix is initialized from a sparsity pattern), no new elements can be
+     * added and an insertion of elements at positions which have not been
+     * initialized will throw an exception.
+     *
+     * For the case that the matrix is constructed without a sparsity pattern
+     * and new matrix entries are added on demand, please note the following
+     * behavior imposed by the underlying Epetra_FECrsMatrix data
+     * structure: If the same matrix entry is inserted more than once, the
+     * matrix entries will be added upon calling compress() (since Epetra does
+     * not track values to the same entry before the final compress() is
+     * called), even if VectorOperation::insert is specified as argument to
+     * compress(). In the case you cannot make sure that matrix entries are
+     * only set once, initialize the matrix with a sparsity pattern to fix the
+     * matrix structure before inserting elements.
      */
     void set (const size_type i,
               const size_type j,
@@ -1121,14 +1143,26 @@ namespace TrilinosWrappers
      *
      * This function is able to insert new elements into the matrix as long as
      * compress() has not been called, so the sparsity pattern will be
-     * extended. When compress() is called for the first time, then this is no
-     * longer possible and an insertion of elements at positions which have
-     * not been initialized will throw an exception.
+     * extended. After compress() has been called for the first time or the
+     * matrix has been initialized from a sparsity pattern, extending the
+     * sparsity pattern is no longer possible and an insertion of elements at
+     * positions which have not been initialized will throw an exception.
      *
      * The optional parameter <tt>elide_zero_values</tt> can be used to
      * specify whether zero values should be inserted anyway or they should be
      * filtered away. The default value is <tt>false</tt>, i.e., even zero
      * values are inserted/replaced.
+     *
+     * For the case that the matrix is constructed without a sparsity pattern
+     * and new matrix entries are added on demand, please note the following
+     * behavior imposed by the underlying Epetra_FECrsMatrix data
+     * structure: If the same matrix entry is inserted more than once, the
+     * matrix entries will be added upon calling compress() (since Epetra does
+     * not track values to the same entry before the final compress() is
+     * called), even if VectorOperation::insert is specified as argument to
+     * compress(). In the case you cannot make sure that matrix entries are
+     * only set once, initialize the matrix with a sparsity pattern to fix the
+     * matrix structure before inserting elements.
      */
     void set (const std::vector<size_type>     &indices,
               const FullMatrix<TrilinosScalar> &full_matrix,
@@ -1150,14 +1184,26 @@ namespace TrilinosWrappers
      *
      * This function is able to insert new elements into the matrix as long as
      * compress() has not been called, so the sparsity pattern will be
-     * extended. When compress() is called for the first time, then this is no
-     * longer possible and an insertion of elements at positions which have
-     * not been initialized will throw an exception.
+     * extended. After compress() has been called for the first time or the
+     * matrix has been initialized from a sparsity pattern, extending the
+     * sparsity pattern is no longer possible and an insertion of elements at
+     * positions which have not been initialized will throw an exception.
      *
      * The optional parameter <tt>elide_zero_values</tt> can be used to
      * specify whether zero values should be inserted anyway or they should be
      * filtered away. The default value is <tt>false</tt>, i.e., even zero
      * values are inserted/replaced.
+     *
+     * For the case that the matrix is constructed without a sparsity pattern
+     * and new matrix entries are added on demand, please note the following
+     * behavior imposed by the underlying Epetra_FECrsMatrix data
+     * structure: If the same matrix entry is inserted more than once, the
+     * matrix entries will be added upon calling compress() (since Epetra does
+     * not track values to the same entry before the final compress() is
+     * called), even if VectorOperation::insert is specified as argument to
+     * compress(). In the case you cannot make sure that matrix entries are
+     * only set once, initialize the matrix with a sparsity pattern to fix the
+     * matrix structure before inserting elements.
      */
     void set (const size_type                    row,
               const std::vector<size_type>      &col_indices,
@@ -1170,14 +1216,26 @@ namespace TrilinosWrappers
      *
      * This function is able to insert new elements into the matrix as long as
      * compress() has not been called, so the sparsity pattern will be
-     * extended. When compress() is called for the first time, then this is no
-     * longer possible and an insertion of elements at positions which have
-     * not been initialized will throw an exception.
+     * extended. After compress() has been called for the first time or the
+     * matrix has been initialized from a sparsity pattern, extending the
+     * sparsity pattern is no longer possible and an insertion of elements at
+     * positions which have not been initialized will throw an exception.
      *
      * The optional parameter <tt>elide_zero_values</tt> can be used to
      * specify whether zero values should be inserted anyway or they should be
      * filtered away. The default value is <tt>false</tt>, i.e., even zero
      * values are inserted/replaced.
+     *
+     * For the case that the matrix is constructed without a sparsity pattern
+     * and new matrix entries are added on demand, please note the following
+     * behavior imposed by the underlying Epetra_FECrsMatrix data
+     * structure: If the same matrix entry is inserted more than once, the
+     * matrix entries will be added upon calling compress() (since Epetra does
+     * not track values to the same entry before the final compress() is
+     * called), even if VectorOperation::insert is specified as argument to
+     * compress(). In the case you cannot make sure that matrix entries are
+     * only set once, initialize the matrix with a sparsity pattern to fix the
+     * matrix structure before inserting elements.
      */
     void set (const size_type       row,
               const size_type       n_cols,
@@ -1668,6 +1726,8 @@ namespace TrilinosWrappers
      * Return a const reference to the underlying Trilinos Epetra_Map that
      * sets the partitioning of the domain space of this matrix, i.e., the
      * partitioning of the vectors this matrix has to be multiplied with.
+     *
+     * @deprecated Use locally_owned_domain_indices() instead.
      */
     const Epetra_Map &domain_partitioner ()  const DEAL_II_DEPRECATED;
 
@@ -1676,6 +1736,8 @@ namespace TrilinosWrappers
      * sets the partitioning of the range space of this matrix, i.e., the
      * partitioning of the vectors that are result from matrix-vector
      * products.
+     *
+     * @deprecated Use locally_owned_range_indices() instead.
      */
     const Epetra_Map &range_partitioner () const DEAL_II_DEPRECATED;
 
@@ -1683,6 +1745,8 @@ namespace TrilinosWrappers
      * Return a const reference to the underlying Trilinos Epetra_Map that
      * sets the partitioning of the matrix rows. Equal to the partitioning of
      * the range.
+     *
+     * @deprecated Use locally_owned_range_indices() instead.
      */
     const Epetra_Map &row_partitioner () const DEAL_II_DEPRECATED;
 
@@ -1691,6 +1755,9 @@ namespace TrilinosWrappers
      * sets the partitioning of the matrix columns. This is in general not
      * equal to the partitioner Epetra_Map for the domain because of overlap
      * in the matrix.
+     *
+     * @deprecated Usually not necessary. If desired, access it via the
+     * Epetra_CrsMatrix.
      */
     const Epetra_Map &col_partitioner () const DEAL_II_DEPRECATED;
 //@}
@@ -2438,7 +2505,7 @@ namespace TrilinosWrappers
 
     if (value == 0)
       {
-        // we have to do checkings on Insert/Add in any case to be consistent
+        // we have to check after Insert/Add in any case to be consistent
         // with the MPI communication model (see the comments in the
         // documentation of TrilinosWrappers::Vector), but we can save some
         // work if the addend is zero. However, these actions are done in case
@@ -2449,7 +2516,7 @@ namespace TrilinosWrappers
           {
             int ierr;
             ierr = matrix->GlobalAssemble(*column_space_map,
-                                          row_partitioner(), false);
+                                          matrix->RowMap(), false);
 
             Assert (ierr == 0, ExcTrilinosError(ierr));
             (void)ierr; // removes -Wunused-but-set-variable in optimized mode
@@ -2484,10 +2551,14 @@ namespace TrilinosWrappers
   SparseMatrix::size_type
   SparseMatrix::n () const
   {
+    // If the matrix structure has not been fixed (i.e., we did not have a
+    // sparsity pattern), it does not know about the number of columns so we
+    // must always take this from the additional column space map
+    Assert(column_space_map.get() != 0, ExcInternalError());
 #ifndef DEAL_II_WITH_64BIT_INDICES
-    return matrix->NumGlobalCols();
+    return column_space_map->NumGlobalElements();
 #else
-    return matrix->NumGlobalCols64();
+    return column_space_map->NumGlobalElements64();
 #endif
   }
 
@@ -2540,35 +2611,10 @@ namespace TrilinosWrappers
                              const MPI_Comm      &communicator,
                              const bool           exchange_data)
   {
-    Epetra_Map map = parallel_partitioning.make_trilinos_map (communicator, false);
-    reinit (map, map, sparsity_pattern, exchange_data);
+    reinit (parallel_partitioning, parallel_partitioning,
+            sparsity_pattern, communicator, exchange_data);
   }
 
-
-
-  template <typename SparsityType>
-  inline
-  void SparseMatrix::reinit (const IndexSet      &row_parallel_partitioning,
-                             const IndexSet      &col_parallel_partitioning,
-                             const SparsityType  &sparsity_pattern,
-                             const MPI_Comm      &communicator,
-                             const bool           exchange_data)
-  {
-    Epetra_Map row_map =
-      row_parallel_partitioning.make_trilinos_map (communicator, false);
-    Epetra_Map col_map =
-      col_parallel_partitioning.make_trilinos_map (communicator, false);
-    reinit (row_map, col_map, sparsity_pattern, exchange_data);
-  }
-
-
-  // declare the existence of an explicit specialization
-  template <>
-  void
-  SparseMatrix::reinit (const Epetra_Map    &input_row_map,
-                        const Epetra_Map    &input_col_map,
-                        const DynamicSparsityPattern &sparsity_pattern,
-                        const bool           exchange_data);
 
 
   template <typename number>
@@ -2581,28 +2627,8 @@ namespace TrilinosWrappers
                              const ::dealii::SparsityPattern *use_this_sparsity)
   {
     Epetra_Map map = parallel_partitioning.make_trilinos_map (communicator, false);
-    reinit (map, map, sparse_matrix, drop_tolerance, copy_values,
-            use_this_sparsity);
-  }
-
-
-
-  template <typename number>
-  inline
-  void SparseMatrix::reinit (const IndexSet      &row_parallel_partitioning,
-                             const IndexSet      &col_parallel_partitioning,
-                             const ::dealii::SparseMatrix<number> &sparse_matrix,
-                             const MPI_Comm      &communicator,
-                             const double         drop_tolerance,
-                             const bool           copy_values,
-                             const ::dealii::SparsityPattern *use_this_sparsity)
-  {
-    Epetra_Map row_map =
-      row_parallel_partitioning.make_trilinos_map (communicator, false);
-    Epetra_Map col_map =
-      col_parallel_partitioning.make_trilinos_map (communicator, false);
-    reinit (row_map, col_map, sparse_matrix, drop_tolerance, copy_values,
-            use_this_sparsity);
+    reinit (parallel_partitioning, parallel_partitioning, sparse_matrix,
+            drop_tolerance, copy_values, use_this_sparsity);
   }
 
 
@@ -2626,24 +2652,6 @@ namespace TrilinosWrappers
 
 
   inline
-  const Epetra_Map &
-  SparseMatrix::domain_partitioner () const
-  {
-    return matrix->DomainMap();
-  }
-
-
-
-  inline
-  const Epetra_Map &
-  SparseMatrix::range_partitioner () const
-  {
-    return matrix->RangeMap();
-  }
-
-
-
-  inline
   IndexSet
   SparseMatrix::locally_owned_domain_indices () const
   {
@@ -2657,24 +2665,6 @@ namespace TrilinosWrappers
   SparseMatrix::locally_owned_range_indices () const
   {
     return IndexSet(matrix->RangeMap());
-  }
-
-
-
-  inline
-  const Epetra_Map &
-  SparseMatrix::row_partitioner () const
-  {
-    return matrix->RowMap();
-  }
-
-
-
-  inline
-  const Epetra_Map &
-  SparseMatrix::col_partitioner () const
-  {
-    return matrix->ColMap();
   }
 
 

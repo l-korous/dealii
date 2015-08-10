@@ -39,6 +39,42 @@ const double FiniteElement<dim,spacedim>::fd_step_length = 1.0e-6;
 
 
 template <int dim, int spacedim>
+FiniteElement<dim, spacedim>::InternalDataBase::InternalDataBase ():
+  update_flags(update_default),
+  update_once(update_default),
+  update_each(update_default),
+  first_cell(true)
+{}
+
+
+
+template <int dim, int spacedim>
+FiniteElement<dim,spacedim>::InternalDataBase::~InternalDataBase ()
+{
+  for (unsigned int i=0; i<differences.size (); ++i)
+    if (differences[i] != 0)
+      {
+        // delete pointer and set it
+        // to zero to avoid
+        // inadvertent use
+        delete differences[i];
+        differences[i] = 0;
+      }
+}
+
+
+
+template <int dim, int spacedim>
+std::size_t
+FiniteElement<dim, spacedim>::InternalDataBase::memory_consumption () const
+{
+  return sizeof(*this);
+}
+
+
+
+
+template <int dim, int spacedim>
 void
 FiniteElement<dim,spacedim>::
 InternalDataBase::initialize_2nd (const FiniteElement<dim,spacedim> *element,
@@ -89,19 +125,27 @@ InternalDataBase::initialize_2nd (const FiniteElement<dim,spacedim> *element,
 
 
 
+template <int dim, int spacedim>
+UpdateFlags
+FiniteElement<dim,spacedim>::InternalDataBase::current_update_flags () const
+{
+  if (first_cell)
+    {
+      Assert (update_flags==(update_once|update_each),
+              ExcInternalError());
+      return update_flags;
+    }
+  else
+    return update_each;
+}
+
+
 
 template <int dim, int spacedim>
-FiniteElement<dim,spacedim>::InternalDataBase::~InternalDataBase ()
+void
+FiniteElement<dim,spacedim>::InternalDataBase::clear_first_cell ()
 {
-  for (unsigned int i=0; i<differences.size (); ++i)
-    if (differences[i] != 0)
-      {
-        // delete pointer and set it
-        // to zero to avoid
-        // inadvertent use
-        delete differences[i];
-        differences[i] = 0;
-      };
+  first_cell = false;
 }
 
 
@@ -203,7 +247,7 @@ FiniteElement<dim,spacedim>::FiniteElement (
   base_to_block_indices.reinit(1,1);
 
   // initialize the restriction and prolongation matrices. the default
-  // contructur of FullMatrix<dim> initializes them with size zero
+  // constructor of FullMatrix<dim> initializes them with size zero
   prolongation.resize(RefinementCase<dim>::isotropic_refinement);
   restriction.resize(RefinementCase<dim>::isotropic_refinement);
   for (unsigned int ref=RefinementCase<dim>::cut_x;
@@ -1220,7 +1264,7 @@ FiniteElement<1,2>::compute_2nd (
   const unsigned int,
   const Mapping<1,2>::InternalDataBase &,
   const InternalDataBase &,
-  FEValuesData<1,2> &) const
+  internal::FEValues::FiniteElementRelatedData<1,2> &) const
 {
   Assert(false, ExcNotImplemented());
 }
@@ -1234,7 +1278,7 @@ FiniteElement<1,3>::compute_2nd (
   const unsigned int,
   const Mapping<1,3>::InternalDataBase &,
   const InternalDataBase &,
-  FEValuesData<1,3> &) const
+  internal::FEValues::FiniteElementRelatedData<1,3> &) const
 {
   Assert(false, ExcNotImplemented());
 }
@@ -1249,7 +1293,7 @@ FiniteElement<2,3>::compute_2nd (
   const unsigned int,
   const Mapping<2,3>::InternalDataBase &,
   const InternalDataBase &,
-  FEValuesData<2,3> &) const
+  internal::FEValues::FiniteElementRelatedData<2,3> &) const
 {
   Assert(false, ExcNotImplemented());
 }
@@ -1264,7 +1308,7 @@ FiniteElement<dim,spacedim>::compute_2nd (
   const unsigned int offset,
   const typename Mapping<dim,spacedim>::InternalDataBase &mapping_internal,
   const InternalDataBase                     &fe_internal,
-  FEValuesData<dim,spacedim>                    &data) const
+  internal::FEValues::FiniteElementRelatedData<dim,spacedim>                    &data) const
 {
   Assert ((fe_internal.update_each | fe_internal.update_once)
           & update_hessians,
@@ -1342,7 +1386,7 @@ FiniteElement<dim,spacedim>::compute_2nd (
                   // component index
                   // of the n-th
                   // nonzero
-                  // compoment
+                  // component
                   unsigned int component=0;
                   for (unsigned int nonzero_comp=0; component<this->n_components();
                        ++component)
@@ -1418,7 +1462,7 @@ FiniteElement<dim,spacedim>::compute_n_nonzero_components (
 /*------------------------------- FiniteElement ----------------------*/
 
 template <int dim, int spacedim>
-typename Mapping<dim,spacedim>::InternalDataBase *
+typename FiniteElement<dim,spacedim>::InternalDataBase *
 FiniteElement<dim,spacedim>::get_face_data (const UpdateFlags       flags,
                                             const Mapping<dim,spacedim>      &mapping,
                                             const Quadrature<dim-1> &quadrature) const
@@ -1430,7 +1474,7 @@ FiniteElement<dim,spacedim>::get_face_data (const UpdateFlags       flags,
 
 
 template <int dim, int spacedim>
-typename Mapping<dim,spacedim>::InternalDataBase *
+typename FiniteElement<dim,spacedim>::InternalDataBase *
 FiniteElement<dim,spacedim>::get_subface_data (const UpdateFlags        flags,
                                                const Mapping<dim,spacedim>      &mapping,
                                                const Quadrature<dim-1> &quadrature) const

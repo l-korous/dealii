@@ -19,6 +19,7 @@
 
 #include <deal.II/base/config.h>
 #include <deal.II/base/derivative_form.h>
+#include <deal.II/base/std_cxx11/array.h>
 #include <deal.II/base/vector_slice.h>
 #include <deal.II/grid/tria.h>
 #include <deal.II/fe/fe_update_flags.h>
@@ -28,11 +29,12 @@
 DEAL_II_NAMESPACE_OPEN
 
 template <int dim> class Quadrature;
-template <int dim, int spacedim> class FEValuesData;
+template <int dim, int spacedim> class FEValues;
 template <int dim, int spacedim> class FEValuesBase;
 template <int dim, int spacedim> class FEValues;
 template <int dim, int spacedim> class FEFaceValues;
 template <int dim, int spacedim> class FESubfaceValues;
+
 
 /**
  * The transformation type used for the Mapping::transform() functions.
@@ -175,7 +177,7 @@ enum MappingType
  * <h4>Mapping of vector fields, differential forms and gradients of vector
  * fields</h4>
  *
- * The transfomation of vector fields, differential forms
+ * The transformation of vector fields, differential forms
  * (gradients/jacobians) and gradients of vector fields between the reference
  * cell and the actual grid cell follows the general form
  *
@@ -195,7 +197,7 @@ enum MappingType
  *
  * <h3>Technical notes</h3>
  *
- * A hint to implementators: no function except the two functions @p
+ * A hint to implementors: no function except the two functions @p
  * update_once and @p update_each may add any flags.
  *
  * For more information about the <tt>spacedim</tt> template parameter check
@@ -231,6 +233,16 @@ public:
   virtual ~Mapping ();
 
   /**
+   * Return the mapped vertices of a cell. These values are not equal to the
+   * vertex coordinates stored by the triangulation for MappingQEulerian and
+   * MappingQ1Eulerian.
+   */
+  virtual
+  std_cxx11::array<Point<spacedim>, GeometryInfo<dim>::vertices_per_cell>
+  get_vertices (
+    const typename Triangulation<dim,spacedim>::cell_iterator &cell) const;
+
+  /**
    * Transforms the point @p p on the unit cell to the point @p p_real on the
    * real cell @p cell and returns @p p_real.
    */
@@ -262,6 +274,21 @@ public:
   transform_real_to_unit_cell (
     const typename Triangulation<dim,spacedim>::cell_iterator &cell,
     const Point<spacedim>                            &p) const = 0;
+
+  /**
+   * Transforms the point @p p on the real @p cell to the corresponding point
+   * on the unit cell, and then projects it to a dim-1  point on the face with
+   * the given face number @p face_no. Ideally the point @p p is near the face
+   * @ face_no, but any point in the cell can technically be projected.
+   *
+   * This function does not make physical sense when dim=1,
+   * so it throws an exception in this case.
+   */
+  virtual Point<dim-1>
+  project_real_point_to_unit_point_on_face (
+    const typename Triangulation<dim,spacedim>::cell_iterator &cell,
+    const unsigned int &face_no,
+    const Point<spacedim> &p) const;
 
   /**
    * Base class for internal data of mapping objects. The
@@ -336,11 +363,11 @@ public:
    * modification despite the fact that the surrounding object is
    * marked as <code>const</code>.
    */
-  class InternalDataBase: public Subscriptor
+  class InternalDataBase
   {
   private:
     /**
-     * Copy constructor forbidden.
+     * Copy construction is forbidden.
      */
     InternalDataBase (const InternalDataBase &);
 
@@ -379,18 +406,6 @@ public:
     UpdateFlags  current_update_flags() const;
 
     /**
-     * Return whether we are presently initializing data for the first cell.
-     * The value of the field this function is returning is set to @p true in
-     * the constructor, and cleared by the @p FEValues class after the first
-     * cell has been initialized.
-     *
-     * This function is used to determine whether we need to use the @p
-     * update_once flags for computing data, or whether we can use the @p
-     * update_each flags.
-     */
-    bool is_first_cell () const;
-
-    /**
      * Set the @p first_cell flag to @p false. Used by the @p FEValues class
      * to indicate that we have already done the work on the first cell.
      */
@@ -425,7 +440,8 @@ public:
 
   private:
     /**
-     * The value returned by @p is_first_cell.
+     * Initially set to true, but reset to false when clear_first_cell()
+     * is called.
      */
     bool first_cell;
   };
@@ -740,7 +756,10 @@ private:
    *   return value of this function).
    * @param[in] quadrature A reference to the quadrature formula in use
    *   for the current evaluation. This quadrature object is the same
-   *   as the one used when creating the @p internal_data object
+   *   as the one used when creating the @p internal_data object. The
+   *   object is used both to map the location of quadrature points,
+   *   as well as to compute the JxW values for each quadrature
+   *   point (which involves the quadrature weights).
    * @param[in] internal_data A reference to an object previously
    *   created by get_data() and that may be used to store information
    *   the mapping can compute once on the reference cell. See the
@@ -772,11 +791,11 @@ private:
    */
   virtual
   CellSimilarity::Similarity
-  fill_fe_values (const typename Triangulation<dim,spacedim>::cell_iterator &cell,
-                  const CellSimilarity::Similarity                           cell_similarity,
-                  const Quadrature<dim>                                     &quadrature,
-                  const InternalDataBase                                    &internal_data,
-                  FEValuesData<dim,spacedim>                                &output_data) const = 0;
+  fill_fe_values (const typename Triangulation<dim,spacedim>::cell_iterator    &cell,
+                  const CellSimilarity::Similarity                              cell_similarity,
+                  const Quadrature<dim>                                        &quadrature,
+                  const InternalDataBase                                       &internal_data,
+                  dealii::internal::FEValues::MappingRelatedData<dim,spacedim> &output_data) const = 0;
 
   /**
    * This function is the equivalent to Mapping::fill_fe_values(),
@@ -789,7 +808,10 @@ private:
    *   information is requested.
    * @param[in] quadrature A reference to the quadrature formula in use
    *   for the current evaluation. This quadrature object is the same
-   *   as the one used when creating the @p internal_data object
+   *   as the one used when creating the @p internal_data object. The
+   *   object is used both to map the location of quadrature points,
+   *   as well as to compute the JxW values for each quadrature
+   *   point (which involves the quadrature weights).
    * @param[in] internal_data A reference to an object previously
    *   created by get_data() and that may be used to store information
    *   the mapping can compute once on the reference cell. See the
@@ -802,11 +824,11 @@ private:
    *   @p internal_data object.
    */
   virtual void
-  fill_fe_face_values (const typename Triangulation<dim,spacedim>::cell_iterator &cell,
-                       const unsigned int                                         face_no,
-                       const Quadrature<dim-1>                                   &quadrature,
-                       const InternalDataBase                                    &internal_data,
-                       FEValuesData<dim,spacedim>                                &output_data) const = 0;
+  fill_fe_face_values (const typename Triangulation<dim,spacedim>::cell_iterator    &cell,
+                       const unsigned int                                            face_no,
+                       const Quadrature<dim-1>                                      &quadrature,
+                       const InternalDataBase                                       &internal_data,
+                       dealii::internal::FEValues::MappingRelatedData<dim,spacedim> &output_data) const = 0;
 
   /**
    * This function is the equivalent to Mapping::fill_fe_values(),
@@ -822,7 +844,10 @@ private:
    *   given cell for which information is requested.
    * @param[in] quadrature A reference to the quadrature formula in use
    *   for the current evaluation. This quadrature object is the same
-   *   as the one used when creating the @p internal_data object
+   *   as the one used when creating the @p internal_data object. The
+   *   object is used both to map the location of quadrature points,
+   *   as well as to compute the JxW values for each quadrature
+   *   point (which involves the quadrature weights).
    * @param[in] internal_data A reference to an object previously
    *   created by get_data() and that may be used to store information
    *   the mapping can compute once on the reference cell. See the
@@ -835,12 +860,12 @@ private:
    *   @p internal_data object.
    */
   virtual void
-  fill_fe_subface_values (const typename Triangulation<dim,spacedim>::cell_iterator &cell,
-                          const unsigned int                                         face_no,
-                          const unsigned int                                         subface_no,
-                          const Quadrature<dim-1>                                   &quadrature,
-                          const InternalDataBase                                    &internal_data,
-                          FEValuesData<dim,spacedim>                                &output_data) const = 0;
+  fill_fe_subface_values (const typename Triangulation<dim,spacedim>::cell_iterator     &cell,
+                          const unsigned int                                             face_no,
+                          const unsigned int                                             subface_no,
+                          const Quadrature<dim-1>                                       &quadrature,
+                          const InternalDataBase                                        &internal_data,
+                          dealii::internal::FEValues::MappingRelatedData<dim, spacedim> &output_data) const = 0;
 
   /**
    * Give class @p FEValues access to the private <tt>get_...data</tt> and
@@ -870,16 +895,6 @@ Mapping<dim,spacedim>::InternalDataBase::current_update_flags () const
     }
   else
     return update_each;
-}
-
-
-
-template <int dim, int spacedim>
-inline
-bool
-Mapping<dim,spacedim>::InternalDataBase::is_first_cell () const
-{
-  return first_cell;
 }
 
 

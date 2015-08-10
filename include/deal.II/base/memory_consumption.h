@@ -19,6 +19,7 @@
 
 #include <deal.II/base/config.h>
 #include <deal.II/base/std_cxx11/shared_ptr.h>
+#include <deal.II/base/std_cxx11/unique_ptr.h>
 
 #include <string>
 #include <complex>
@@ -54,7 +55,7 @@ template <typename T> class VectorizedArray;
  * memory_consumption() will simply call the member function of same name. It
  * is up to the implementation of the data type to provide a good estimate of
  * the amount of memory used. Inside this function, the use of
- * MemoryConsumpton::memory_consumption() for compounds of the class helps to
+ * MemoryConsumption::memory_consumption() for compounds of the class helps to
  * obtain this estimate. Most classes in the deal.II library have such a
  * member function.
  *
@@ -355,6 +356,15 @@ namespace MemoryConsumption
   template <typename T>
   inline
   std::size_t memory_consumption (const std_cxx11::shared_ptr<T> &);
+
+  /**
+   * Return the amount of memory used by a std_cxx11::unique_ptr object.
+   *
+   * @note This returns the size of the pointer, not of the object pointed to.
+   */
+  template <typename T>
+  inline
+  std::size_t memory_consumption (const std_cxx11::unique_ptr<T> &);
 }
 
 
@@ -624,6 +634,16 @@ namespace MemoryConsumption
   memory_consumption (const std_cxx11::shared_ptr<T> &)
   {
     return sizeof(std_cxx11::shared_ptr<T>);
+  }
+
+
+
+  template <typename T>
+  inline
+  std::size_t
+  memory_consumption (const std_cxx11::unique_ptr<T> &)
+  {
+    return sizeof(std_cxx11::unique_ptr<T>);
   }
 
 

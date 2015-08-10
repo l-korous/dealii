@@ -452,8 +452,8 @@ namespace DoFTools
    * There is a complication if some or all of the shape functions of the
    * finite element in use are non-zero in more than one component (in deal.II
    * speak: they are non-primitive). In this case, the coupling element
-   * correspoding to the first non-zero component is taken and additional ones
-   * for this component are ignored.
+   * corresponding to the first non-zero component is taken and additional
+   * ones for this component are ignored.
    *
    * @todo Not implemented for hp::DoFHandler.
    *
@@ -597,7 +597,7 @@ namespace DoFTools
    * their associated components in the coefficient matrix.
    *
    * There is one matrix for couplings in a cell and one for the couplings
-   * occuring in fluxes.
+   * occurring in fluxes.
    *
    * @todo Not implemented for hp::DoFHandler.
    */
@@ -1645,8 +1645,6 @@ namespace DoFTools
    * finite elements with essential boundary conditions. Other applications
    * are possible, in particular changing <tt>boundary_dofs</tt> for non-
    * essential boundary conditions.
-   *
-   * Since the patches are defined through refinement, th
    *
    * @arg <tt>block_list</tt>: the SparsityPattern into which the patches will
    * be stored.

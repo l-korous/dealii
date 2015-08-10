@@ -104,7 +104,7 @@ namespace FEValuesViews
             ExcIndexRange(component, 0, fe_values.fe->n_components()));
 
 //TODO: we'd like to use the fields with the same name as these
-// variables from FEValuesData, but they aren't initialized yet
+// variables from FEValuesBase, but they aren't initialized yet
 // at the time we get here, so re-create it all
     const std::vector<unsigned int> shape_function_to_row_table
       = make_shape_function_to_row_table (*fe_values.fe);
@@ -165,7 +165,7 @@ namespace FEValuesViews
                           fe_values.fe->n_components()));
 
 //TODO: we'd like to use the fields with the same name as these
-// variables from FEValuesData, but they aren't initialized yet
+// variables from FEValuesBase, but they aren't initialized yet
 // at the time we get here, so re-create it all
     const std::vector<unsigned int> shape_function_to_row_table
       = make_shape_function_to_row_table (*fe_values.fe);
@@ -263,7 +263,7 @@ namespace FEValuesViews
                          0,
                          fe_values.fe->n_components()));
 //TODO: we'd like to use the fields with the same name as these
-// variables from FEValuesData, but they aren't initialized yet
+// variables from FEValuesBase, but they aren't initialized yet
 // at the time we get here, so re-create it all
     const std::vector<unsigned int> shape_function_to_row_table
       = make_shape_function_to_row_table (*fe_values.fe);
@@ -362,7 +362,7 @@ namespace FEValuesViews
                          0,
                          fe_values.fe->n_components()));
 //TODO: we'd like to use the fields with the same name as these
-// variables from FEValuesData, but they aren't initialized yet
+// variables from FEValuesBase, but they aren't initialized yet
 // at the time we get here, so re-create it all
     const std::vector<unsigned int> shape_function_to_row_table
       = make_shape_function_to_row_table (*fe_values.fe);
@@ -1117,7 +1117,7 @@ namespace FEValuesViews
                     // there is no single nonzero component
                     //
                     // the following is not implemented! we need to consider the
-                    // interplay between mutliple non-zero entries in shape
+                    // interplay between multiple non-zero entries in shape
                     // function and the representation as a symmetric
                     // second-order tensor
                     const unsigned int comp =
@@ -2070,70 +2070,79 @@ get_interpolated_dof_values (const IndexSet &,
 
 
 
-/* --------------------- FEValuesData ----------------- */
-
-
-template <int dim, int spacedim>
-void
-FEValuesData<dim,spacedim>::initialize (const unsigned int        n_quadrature_points,
-                                        const FiniteElement<dim,spacedim> &fe,
-                                        const UpdateFlags         flags)
+namespace internal
 {
-  this->update_flags = flags;
+  namespace FEValues
+  {
+    template <int dim, int spacedim>
+    void
+    MappingRelatedData<dim,spacedim>::initialize (const unsigned int        n_quadrature_points,
+                                                  const UpdateFlags         flags)
+    {
+      if (flags & update_quadrature_points)
+        this->quadrature_points.resize(n_quadrature_points);
 
-  // initialize the table mapping
-  // from shape function number to
-  // the rows in the tables storing
-  // the data by shape function and
-  // nonzero component
-  this->shape_function_to_row_table
-    = make_shape_function_to_row_table (fe);
+      if (flags & update_JxW_values)
+        this->JxW_values.resize(n_quadrature_points);
 
-  // count the total number of non-zero
-  // components accumulated over all shape
-  // functions
-  unsigned int n_nonzero_shape_components = 0;
-  for (unsigned int i=0; i<fe.dofs_per_cell; ++i)
-    n_nonzero_shape_components += fe.n_nonzero_components (i);
-  Assert (n_nonzero_shape_components >= fe.dofs_per_cell,
-          ExcInternalError());
+      if (flags & update_jacobians)
+        this->jacobians.resize(n_quadrature_points);
 
-  // with the number of rows now
-  // known, initialize those fields
-  // that we will need to their
-  // correct size
-  if (flags & update_values)
-    this->shape_values.reinit(n_nonzero_shape_components,
-                              n_quadrature_points);
+      if (flags & update_jacobian_grads)
+        this->jacobian_grads.resize(n_quadrature_points);
 
-  if (flags & update_gradients)
-    this->shape_gradients.resize (n_nonzero_shape_components,
-                                  std::vector<Tensor<1,spacedim> > (n_quadrature_points));
+      if (flags & update_inverse_jacobians)
+        this->inverse_jacobians.resize(n_quadrature_points);
 
-  if (flags & update_hessians)
-    this->shape_hessians.resize (n_nonzero_shape_components,
-                                 std::vector<Tensor<2,spacedim> > (n_quadrature_points));
+      if (flags & update_boundary_forms)
+        this->boundary_forms.resize(n_quadrature_points);
 
-  if (flags & update_quadrature_points)
-    this->quadrature_points.resize(n_quadrature_points);
+      if (flags & update_normal_vectors)
+        this->normal_vectors.resize(n_quadrature_points);
+    }
 
-  if (flags & update_JxW_values)
-    this->JxW_values.resize(n_quadrature_points);
 
-  if (flags & update_jacobians)
-    this->jacobians.resize(n_quadrature_points);
+    template <int dim, int spacedim>
+    void
+    FiniteElementRelatedData<dim,spacedim>::initialize (const unsigned int        n_quadrature_points,
+                                                        const FiniteElement<dim,spacedim> &fe,
+                                                        const UpdateFlags         flags)
+    {
 
-  if (flags & update_jacobian_grads)
-    this->jacobian_grads.resize(n_quadrature_points);
+      // initialize the table mapping
+      // from shape function number to
+      // the rows in the tables storing
+      // the data by shape function and
+      // nonzero component
+      this->shape_function_to_row_table
+        = make_shape_function_to_row_table (fe);
 
-  if (flags & update_inverse_jacobians)
-    this->inverse_jacobians.resize(n_quadrature_points);
+      // count the total number of non-zero
+      // components accumulated over all shape
+      // functions
+      unsigned int n_nonzero_shape_components = 0;
+      for (unsigned int i=0; i<fe.dofs_per_cell; ++i)
+        n_nonzero_shape_components += fe.n_nonzero_components (i);
+      Assert (n_nonzero_shape_components >= fe.dofs_per_cell,
+              ExcInternalError());
 
-  if (flags & update_boundary_forms)
-    this->boundary_forms.resize(n_quadrature_points);
+      // with the number of rows now
+      // known, initialize those fields
+      // that we will need to their
+      // correct size
+      if (flags & update_values)
+        this->shape_values.reinit(n_nonzero_shape_components,
+                                  n_quadrature_points);
 
-  if (flags & update_normal_vectors)
-    this->normal_vectors.resize(n_quadrature_points);
+      if (flags & update_gradients)
+        this->shape_gradients.resize (n_nonzero_shape_components,
+                                      std::vector<Tensor<1,spacedim> > (n_quadrature_points));
+
+      if (flags & update_hessians)
+        this->shape_hessians.resize (n_nonzero_shape_components,
+                                     std::vector<Tensor<2,spacedim> > (n_quadrature_points));
+    }
+  }
 }
 
 
@@ -2152,8 +2161,6 @@ FEValuesBase<dim,spacedim>::FEValuesBase (const unsigned int n_q_points,
   dofs_per_cell (dofs_per_cell),
   mapping(&mapping, typeid(*this).name()),
   fe(&fe, typeid(*this).name()),
-  mapping_data(0, typeid(*this).name()),
-  fe_data(0, typeid(*this).name()),
   fe_values_views_cache (*this)
 {
   Assert (n_q_points > 0,
@@ -2168,25 +2175,6 @@ FEValuesBase<dim,spacedim>::FEValuesBase (const unsigned int n_q_points,
 template <int dim, int spacedim>
 FEValuesBase<dim,spacedim>::~FEValuesBase ()
 {
-  // delete those fields that were
-  // created by the mapping and
-  // finite element objects,
-  // respectively, but of which we
-  // have assumed ownership
-  if (fe_data != 0)
-    {
-      typename Mapping<dim,spacedim>::InternalDataBase *tmp1=fe_data;
-      fe_data=0;
-      delete tmp1;
-    }
-
-  if (mapping_data != 0)
-    {
-      typename Mapping<dim,spacedim>::InternalDataBase *tmp1=mapping_data;
-      mapping_data=0;
-      delete tmp1;
-    }
-
   tria_listener.disconnect ();
 }
 
@@ -3418,11 +3406,14 @@ FEValues<dim,spacedim>::initialize (const UpdateFlags update_flags)
   // FE and the Mapping can store
   // intermediate data used across
   // calls to reinit
-  this->mapping_data = this->mapping->get_data(flags, quadrature);
-  this->fe_data      = this->fe->get_data(flags, *this->mapping, quadrature);
+  this->mapping_data.reset (this->mapping->get_data(flags, quadrature));
+  this->fe_data.reset (this->fe->get_data(flags, *this->mapping, quadrature));
 
-  // set up objects within this class
-  FEValuesData<dim,spacedim>::initialize (this->n_quadrature_points, *this->fe, flags);
+  // initialize the base classes
+  internal::FEValues::MappingRelatedData<dim,spacedim>::initialize(this->n_quadrature_points, flags);
+  internal::FEValues::FiniteElementRelatedData<dim,spacedim>::initialize(this->n_quadrature_points, *this->fe, flags);
+
+  this->update_flags = flags;
 }
 
 
@@ -3532,6 +3523,7 @@ void FEValues<dim,spacedim>::do_reinit ()
                                 quadrature,
                                 *this->mapping_data,
                                 *this->fe_data,
+                                *this,
                                 *this,
                                 this->cell_similarity);
 
@@ -3644,11 +3636,14 @@ FEFaceValues<dim,spacedim>::initialize (const UpdateFlags update_flags)
   // FE and the Mapping can store
   // intermediate data used across
   // calls to reinit
-  this->mapping_data = this->mapping->get_face_data(flags, this->quadrature);
-  this->fe_data      = this->fe->get_face_data(flags, *this->mapping, this->quadrature);
+  this->mapping_data.reset (this->mapping->get_face_data(flags, this->quadrature));
+  this->fe_data.reset (this->fe->get_face_data(flags, *this->mapping, this->quadrature));
 
-  // set up objects within this class
-  FEValuesData<dim,spacedim>::initialize(this->n_quadrature_points, *this->fe, flags);
+  // initialize the base classes
+  internal::FEValues::MappingRelatedData<dim,spacedim>::initialize(this->n_quadrature_points, flags);
+  internal::FEValues::FiniteElementRelatedData<dim,spacedim>::initialize(this->n_quadrature_points, *this->fe, flags);
+
+  this->update_flags = flags;
 }
 
 
@@ -3714,9 +3709,6 @@ void FEFaceValues<dim,spacedim>::do_reinit (const unsigned int face_no)
   const typename Triangulation<dim,spacedim>::cell_iterator cell=*this->present_cell;
   this->present_face_index=cell->face_index(face_no);
 
-  Assert(!(this->update_flags & update_jacobian_grads),
-         ExcNotImplemented());
-
   this->get_mapping().fill_fe_face_values(*this->present_cell,
                                           face_no,
                                           this->quadrature,
@@ -3728,6 +3720,7 @@ void FEFaceValues<dim,spacedim>::do_reinit (const unsigned int face_no)
                                      this->quadrature,
                                      *this->mapping_data,
                                      *this->fe_data,
+                                     *this,
                                      *this);
 
   this->fe_data->clear_first_cell ();
@@ -3789,13 +3782,16 @@ FESubfaceValues<dim,spacedim>::initialize (const UpdateFlags update_flags)
   // FE and the Mapping can store
   // intermediate data used across
   // calls to reinit
-  this->mapping_data = this->mapping->get_subface_data(flags, this->quadrature);
-  this->fe_data      = this->fe->get_subface_data(flags,
+  this->mapping_data.reset (this->mapping->get_subface_data(flags, this->quadrature));
+  this->fe_data.reset (this->fe->get_subface_data(flags,
                                                   *this->mapping,
-                                                  this->quadrature);
+                                                  this->quadrature));
 
-  // set up objects within this class
-  FEValuesData<dim,spacedim>::initialize(this->n_quadrature_points, *this->fe, flags);
+  // initialize the base classes
+  internal::FEValues::MappingRelatedData<dim,spacedim>::initialize(this->n_quadrature_points, flags);
+  internal::FEValues::FiniteElementRelatedData<dim,spacedim>::initialize(this->n_quadrature_points, *this->fe, flags);
+
+  this->update_flags = flags;
 }
 
 
@@ -3944,9 +3940,6 @@ void FESubfaceValues<dim,spacedim>::do_reinit (const unsigned int face_no,
       this->present_face_index=subface_index;
     }
 
-  Assert(!(this->update_flags & update_jacobian_grads),
-         ExcNotImplemented());
-
   // now ask the mapping and the finite element to do the actual work
   this->get_mapping().fill_fe_subface_values(*this->present_cell,
                                              face_no,
@@ -3961,6 +3954,7 @@ void FESubfaceValues<dim,spacedim>::do_reinit (const unsigned int face_no,
                                         this->quadrature,
                                         *this->mapping_data,
                                         *this->fe_data,
+                                        *this,
                                         *this);
 
   this->fe_data->clear_first_cell ();

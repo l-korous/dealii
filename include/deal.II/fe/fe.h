@@ -20,13 +20,13 @@
 #include <deal.II/base/geometry_info.h>
 #include <deal.II/fe/fe_base.h>
 #include <deal.II/fe/fe_values_extractors.h>
+#include <deal.II/fe/fe_update_flags.h>
 #include <deal.II/fe/component_mask.h>
 #include <deal.II/fe/block_mask.h>
 #include <deal.II/fe/mapping.h>
 
 DEAL_II_NAMESPACE_OPEN
 
-template <int dim, int spacedim> class FEValuesData;
 template <int dim, int spacedim> class FEValuesBase;
 template <int dim, int spacedim> class FEValues;
 template <int dim, int spacedim> class FEFaceValues;
@@ -355,9 +355,7 @@ public:
 
   /**
    * A base class for internal data that derived finite element classes may
-   * wish to store. This class uses the same data fields as
-   * Mapping::InternalDataBase() but adds a field for the computation of
-   * second derivatives.
+   * wish to store.
    *
    * The class is used as follows: Whenever an FEValues (or FEFaceValues or
    * FESubfaceValues) object is initialized, it requests that the finite
@@ -382,9 +380,21 @@ public:
    *
    * @author Guido Kanschat, 2001; Wolfgang Bangerth, 2015.
    */
-  class InternalDataBase : public Mapping<dim,spacedim>::InternalDataBase
+  class InternalDataBase
   {
+  private:
+    /**
+     * Copy construction is forbidden.
+     */
+    InternalDataBase (const InternalDataBase &);
+
   public:
+    /**
+     * Constructor. Sets update_flags to @p update_default and @p first_cell
+     * to @p true.
+     */
+    InternalDataBase ();
+
     /**
      * Destructor. Made virtual to allow polymorphism.
      */
@@ -399,6 +409,39 @@ public:
                          const Quadrature<dim>    &quadrature);
 
     /**
+     * Values updated by the constructor or by reinit.
+     */
+    UpdateFlags          update_flags;
+
+    /**
+     * Values computed by constructor.
+     */
+    UpdateFlags          update_once;
+
+    /**
+     * Values updated on each cell by reinit.
+     */
+    UpdateFlags          update_each;
+
+    /**
+     * If <tt>first_cell==true</tt> this function returns @p update_flags,
+     * i.e. <tt>update_once|update_each</tt>. If <tt>first_cell==false</tt> it
+     * returns @p update_each.
+     */
+    UpdateFlags  current_update_flags() const;
+
+    /**
+     * Set the @p first_cell flag to @p false. Used by the @p FEValues class
+     * to indicate that we have already done the work on the first cell.
+     */
+    virtual void clear_first_cell ();
+
+    /**
+     * Return an estimate (in bytes) or the memory consumption of this object.
+     */
+    virtual std::size_t memory_consumption () const;
+
+    /**
      * Storage for FEValues objects needed to approximate second derivatives.
      *
      * The ordering is <i>p+hx</i>, <i>p+hy</i>, <i>p+hz</i>, <i>p-hx</i>,
@@ -406,6 +449,13 @@ public:
      * missing.
      */
     std::vector<FEValues<dim,spacedim>*> differences;
+
+  private:
+    /**
+     * Initially set to true, but reset to false when clear_first_cell()
+     * is called.
+     */
+    bool first_cell;
   };
 
 public:
@@ -1574,7 +1624,7 @@ public:
    *
    * @note This function is implemented in FiniteElement for the case that the
    * element has support points. In this case, the resulting coefficients are
-   * just the values in the suport points. All other elements must reimplement
+   * just the values in the support points. All other elements must reimplement
    * it.
    */
   virtual
@@ -1753,7 +1803,7 @@ protected:
 
   /**
    * Specify the constraints which the dofs on the two sides of a cell
-   * interface underly if the line connects two cells of which one is refined
+   * interface underlie if the line connects two cells of which one is refined
    * once.
    *
    * For further details see the general description of the derived class.
@@ -1805,7 +1855,7 @@ protected:
    * can be in (all combinations of the three bool flags face_orientation,
    * face_flip and face_rotation).
    *
-   * The standard implementation fills this with zeros, i.e. no permuatation
+   * The standard implementation fills this with zeros, i.e. no permutation
    * at all. Derived finite element classes have to fill this Table with the
    * correct values.
    */
@@ -1969,12 +2019,12 @@ protected:
   /**
    * Compute second derivatives by finite differences of gradients.
    */
-  void compute_2nd (const Mapping<dim,spacedim>                      &mapping,
-                    const typename Triangulation<dim,spacedim>::cell_iterator    &cell,
-                    const unsigned int                       offset,
-                    const typename Mapping<dim,spacedim>::InternalDataBase &mapping_internal,
-                    const InternalDataBase                        &fe_internal,
-                    FEValuesData<dim,spacedim>                       &data) const;
+  void compute_2nd (const Mapping<dim,spacedim>                                         &mapping,
+                    const typename Triangulation<dim,spacedim>::cell_iterator           &cell,
+                    const unsigned int                                                   offset,
+                    const typename Mapping<dim,spacedim>::InternalDataBase              &mapping_internal,
+                    const InternalDataBase                                              &fe_internal,
+                    dealii::internal::FEValues::FiniteElementRelatedData<dim, spacedim> &data) const;
 
   /**
    * Given the pattern of nonzero components for each shape function, compute
@@ -2023,7 +2073,7 @@ protected:
    * then has to assume ownership (which includes destruction when it is no
    * more needed).
    */
-  virtual typename Mapping<dim,spacedim>::InternalDataBase *
+  virtual InternalDataBase *
   get_data (const UpdateFlags      flags,
             const Mapping<dim,spacedim>    &mapping,
             const Quadrature<dim> &quadrature) const = 0;
@@ -2034,7 +2084,7 @@ protected:
    * the caller of this function then has to assume ownership (which includes
    * destruction when it is no more needed).
    */
-  virtual typename Mapping<dim,spacedim>::InternalDataBase *
+  virtual InternalDataBase *
   get_face_data (const UpdateFlags        flags,
                  const Mapping<dim,spacedim>      &mapping,
                  const Quadrature<dim-1> &quadrature) const;
@@ -2045,59 +2095,44 @@ protected:
    * object of which the caller of this function then has to assume ownership
    * (which includes destruction when it is no more needed).
    */
-  virtual typename Mapping<dim,spacedim>::InternalDataBase *
+  virtual InternalDataBase *
   get_subface_data (const UpdateFlags        flags,
                     const Mapping<dim,spacedim>      &mapping,
                     const Quadrature<dim-1> &quadrature) const;
 
-  /**
-   * Fill the fields of FEValues. This function performs all the operations
-   * needed to compute the data of an FEValues object.
-   *
-   * The same function in @p mapping must have been called for the same cell
-   * first!
-   */
-  virtual void
-  fill_fe_values (const Mapping<dim,spacedim>                               &mapping,
-                  const typename Triangulation<dim,spacedim>::cell_iterator &cell,
-                  const Quadrature<dim>                                     &quadrature,
-                  const typename Mapping<dim,spacedim>::InternalDataBase          &mapping_internal,
-                  const typename Mapping<dim,spacedim>::InternalDataBase          &fe_internal,
-                  FEValuesData<dim,spacedim>                                &data,
-                  const CellSimilarity::Similarity                           cell_similarity) const = 0;
+  virtual
+  void
+  fill_fe_values (const Mapping<dim,spacedim>                                         &mapping,
+                  const typename Triangulation<dim,spacedim>::cell_iterator           &cell,
+                  const Quadrature<dim>                                               &quadrature,
+                  const typename Mapping<dim,spacedim>::InternalDataBase              &mapping_internal,
+                  const InternalDataBase                                              &fe_internal,
+                  const dealii::internal::FEValues::MappingRelatedData<dim, spacedim> &mapping_data,
+                  dealii::internal::FEValues::FiniteElementRelatedData<dim, spacedim> &output_data,
+                  const CellSimilarity::Similarity                                     cell_similarity) const = 0;
 
-  /**
-   * Fill the fields of FEFaceValues. This function performs all the
-   * operations needed to compute the data of an FEFaceValues object.
-   *
-   * The same function in @p mapping must have been called for the same cell
-   * first!
-   */
-  virtual void
-  fill_fe_face_values (const Mapping<dim,spacedim>                   &mapping,
-                       const typename Triangulation<dim,spacedim>::cell_iterator &cell,
-                       const unsigned int                    face_no,
-                       const Quadrature<dim-1>              &quadrature,
-                       const typename Mapping<dim,spacedim>::InternalDataBase       &mapping_internal,
-                       const typename Mapping<dim,spacedim>::InternalDataBase       &fe_internal,
-                       FEValuesData<dim,spacedim>                    &data) const = 0;
+  virtual
+  void
+  fill_fe_face_values (const Mapping<dim,spacedim>                                         &mapping,
+                       const typename Triangulation<dim,spacedim>::cell_iterator           &cell,
+                       const unsigned int                                                   face_no,
+                       const Quadrature<dim-1>                                             &quadrature,
+                       const typename Mapping<dim,spacedim>::InternalDataBase              &mapping_internal,
+                       const InternalDataBase                                              &fe_internal,
+                       const dealii::internal::FEValues::MappingRelatedData<dim, spacedim> &mapping_data,
+                       dealii::internal::FEValues::FiniteElementRelatedData<dim, spacedim> &output_data) const = 0;
 
-  /**
-   * Fill the fields of FESubfaceValues. This function performs all the
-   * operations needed to compute the data of an FESubfaceValues object.
-   *
-   * The same function in @p mapping must have been called for the same cell
-   * first!
-   */
-  virtual void
-  fill_fe_subface_values (const Mapping<dim,spacedim>                   &mapping,
-                          const typename Triangulation<dim,spacedim>::cell_iterator &cell,
-                          const unsigned int                    face_no,
-                          const unsigned int                    sub_no,
-                          const Quadrature<dim-1>              &quadrature,
-                          const typename Mapping<dim,spacedim>::InternalDataBase &mapping_internal,
-                          const typename Mapping<dim,spacedim>::InternalDataBase &fe_internal,
-                          FEValuesData<dim,spacedim>                    &data) const = 0;
+  virtual
+  void
+  fill_fe_subface_values (const Mapping<dim,spacedim>                                         &mapping,
+                          const typename Triangulation<dim,spacedim>::cell_iterator           &cell,
+                          const unsigned int                                                   face_no,
+                          const unsigned int                                                   sub_no,
+                          const Quadrature<dim-1>                                             &quadrature,
+                          const typename Mapping<dim,spacedim>::InternalDataBase              &mapping_internal,
+                          const InternalDataBase                                              &fe_internal,
+                          const dealii::internal::FEValues::MappingRelatedData<dim, spacedim> &mapping_data,
+                          dealii::internal::FEValues::FiniteElementRelatedData<dim, spacedim> &output_data) const = 0;
 
   friend class InternalDataBase;
   friend class FEValuesBase<dim,spacedim>;

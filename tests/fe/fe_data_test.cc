@@ -45,17 +45,17 @@ template <int dim>
 void test_2d_3d (std::vector<FiniteElement<dim> *> &fe_datas)
 {
 				   // Vector DG elements
-  fe_datas.push_back(
-    new FE_DGRaviartThomas<dim>(0));
+  fe_datas.push_back(new FE_DGRaviartThomas<dim>(0));
   deallog << (*fe_datas.rbegin())->get_name() << std::endl;
-  fe_datas.push_back(
-    new FE_DGRaviartThomas<dim>(1));
+  fe_datas.push_back(new FE_DGRaviartThomas<dim>(1));
   deallog << (*fe_datas.rbegin())->get_name() << std::endl;
-  fe_datas.push_back(
-    new FE_DGNedelec<dim>(0));
+  fe_datas.push_back(new FE_DGBDM<dim>(1));
   deallog << (*fe_datas.rbegin())->get_name() << std::endl;
-  fe_datas.push_back(
-    new FE_DGNedelec<dim>(1));
+  fe_datas.push_back(new FE_DGBDM<dim>(2));
+  deallog << (*fe_datas.rbegin())->get_name() << std::endl;
+  fe_datas.push_back(new FE_DGNedelec<dim>(0));
+  deallog << (*fe_datas.rbegin())->get_name() << std::endl;
+  fe_datas.push_back(new FE_DGNedelec<dim>(1));
   deallog << (*fe_datas.rbegin())->get_name() << std::endl;
 
 				   // Hdiv elements
@@ -71,6 +71,11 @@ void test_2d_3d (std::vector<FiniteElement<dim> *> &fe_datas)
   deallog << (*fe_datas.rbegin())->get_name() << std::endl;
   fe_datas.push_back(new FESystem<dim>(*rt1, 1,
 				       FE_DGQ<dim> (1), 1));
+  deallog << (*fe_datas.rbegin())->get_name() << std::endl;
+
+  fe_datas.push_back(new FE_BDM<dim>(1));
+  deallog << (*fe_datas.rbegin())->get_name() << std::endl;
+  fe_datas.push_back(new FE_BDM<dim>(2));
   deallog << (*fe_datas.rbegin())->get_name() << std::endl;
 
 				   // Hcurl elements
@@ -152,11 +157,6 @@ void test_fe_datas()
       deallog << (*fe_datas.rbegin())->get_name() << std::endl;
       fe_datas.push_back(
         new FE_DGBDM<dim>(2));
-      deallog << (*fe_datas.rbegin())->get_name() << std::endl;
-
-      fe_datas.push_back(new FE_BDM<dim>(1));
-      deallog << (*fe_datas.rbegin())->get_name() << std::endl;
-      fe_datas.push_back(new FE_BDM<dim>(2));
       deallog << (*fe_datas.rbegin())->get_name() << std::endl;
     }
   if (dim>1)

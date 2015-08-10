@@ -508,7 +508,7 @@ SparseMatrixEZ<number>::print_formatted ( std::ostream          &out,
         width = precision+2;
     }
 
-  // TODO: Skip nonexisting entries
+  // TODO: Skip nonexistant entries
   for (size_type i=0; i<m(); ++i)
     {
       for (size_type j=0; j<n(); ++j)
@@ -546,31 +546,11 @@ SparseMatrixEZ<number>::block_write (std::ostream &out) const
   out.write(reinterpret_cast<const char *>(&*r),
             sizeof(RowInfo) * row_info.size());
 
-//   Just in case that vector entries are not stored consecutively
-//   const typename std::vector<RowInfo>::const_iterator re = row_info.end();
-
-//   while (r != re)
-//     {
-//       out.write(reinterpret_cast<const char*>(&*r),
-//              sizeof(RowInfo));
-//       ++r;
-//     }
-
   out << "][";
 
   typename std::vector<Entry>::const_iterator d = data.begin();
   out.write(reinterpret_cast<const char *>(&*d),
             sizeof(Entry) * data.size());
-
-//   Just in case that vector entries are not stored consecutively
-//   const typename std::vector<Entry>::const_iterator de = data.end();
-
-//   while (d != de)
-//     {
-//       out.write(reinterpret_cast<const char*>(&*d),
-//              sizeof(Entry));
-//       ++d;
-//     }
 
   out << ']';
 

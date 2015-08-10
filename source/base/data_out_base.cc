@@ -219,10 +219,30 @@ namespace
 
     return encoded_data;
   }
-#endif
 
 
-#ifdef DEAL_II_WITH_ZLIB
+  /**
+   * Convert between the enum specified inside VtkFlags and the preprocessor
+   * constant defined by zlib.
+   */
+  int get_zlib_compression_level(const DataOutBase::VtkFlags::ZlibCompressionLevel level)
+  {
+    switch (level)
+      {
+      case (DataOutBase::VtkFlags::no_compression):
+        return Z_NO_COMPRESSION;
+      case (DataOutBase::VtkFlags::best_speed):
+        return Z_BEST_SPEED;
+      case (DataOutBase::VtkFlags::best_compression):
+        return Z_BEST_COMPRESSION;
+      case (DataOutBase::VtkFlags::default_compression):
+        return Z_DEFAULT_COMPRESSION;
+      default:
+        Assert(false, ExcNotImplemented());
+        return Z_NO_COMPRESSION;
+      }
+  }
+
   /**
    * Do a zlib compression followed
    * by a base64 encoding of the
@@ -230,8 +250,9 @@ namespace
    * written to the given stream.
    */
   template <typename T>
-  void write_compressed_block (const std::vector<T> &data,
-                               std::ostream         &output_stream)
+  void write_compressed_block (const std::vector<T>        &data,
+                               const DataOutBase::VtkFlags &flags,
+                               std::ostream                &output_stream)
   {
     if (data.size() != 0)
       {
@@ -244,7 +265,7 @@ namespace
                              &compressed_data_length,
                              (const Bytef *) &data[0],
                              data.size() * sizeof(T),
-                             Z_BEST_COMPRESSION);
+                             get_zlib_compression_level(flags.compression_level));
         (void)err;
         Assert (err == Z_OK, ExcInternalError());
 
@@ -566,7 +587,7 @@ namespace
   };
 #endif
 
-  // NOTE: The dimension of the array is choosen to 5 to allow the choice
+  // NOTE: The dimension of the array is chosen to 5 to allow the choice
   // DataOutBase<deal_II_dimension,deal_II_dimension+1> in general
   // Wolfgang supposed that we don't need it in general, but however this
   // choice avoids a -Warray-bounds check warning
@@ -1463,7 +1484,7 @@ namespace
     // compress the data we have in
     // memory and write them to the
     // stream. then release the data
-    write_compressed_block (data, stream);
+    write_compressed_block (data, flags, stream);
 #else
     for (unsigned int i=0; i<data.size(); ++i)
       stream << data[i] << ' ';
@@ -1703,7 +1724,7 @@ namespace DataOutBase
                        "Whether POVRAY should use bicubic patches");
     prm.declare_entry ("Include external file", "true",
                        Patterns::Bool (),
-                       "Whether camera and lightling information should "
+                       "Whether camera and lighting information should "
                        "be put into an external file \"data.inc\" or into "
                        "the POVRAY input file");
   }
@@ -1977,11 +1998,13 @@ namespace DataOutBase
 
   VtkFlags::VtkFlags (const double time,
                       const unsigned int cycle,
-                      const bool print_date_and_time)
+                      const bool print_date_and_time,
+                      const VtkFlags::ZlibCompressionLevel compression_level)
     :
     time (time),
     cycle (cycle),
-    print_date_and_time (print_date_and_time)
+    print_date_and_time (print_date_and_time),
+    compression_level (compression_level)
   {}
 
 

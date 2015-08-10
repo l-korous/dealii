@@ -166,7 +166,7 @@ private:
   map_iterator;
 
   /**
-   * Store the number of objects which subscribed to this object. Initialally,
+   * Store the number of objects which subscribed to this object. Initially,
    * this number is zero, and upon destruction it shall be zero again (i.e.
    * all objects which subscribed should have unsubscribed again).
    *
@@ -177,9 +177,9 @@ private:
    * constant objects also.
    *
    * In multithreaded mode, this counter may be modified by different threads.
-   * We thus have to mark it <tt>volatile</tt>. However, this is counter-
-   * productive in non-MT mode since it may pessimize code. So use the macro
-   * defined above to selectively add volatility.
+   * We thus have to mark it <tt>volatile</tt>. However, this is
+   * counter-productive in non-MT mode since it may pessimize code. So use the macro
+   * defined in <tt>deal.II/base/config.h</tt> to selectively add volatility.
    */
   mutable DEAL_VOLATILE unsigned int counter;
 

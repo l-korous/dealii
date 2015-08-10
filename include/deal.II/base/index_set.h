@@ -138,6 +138,8 @@ public:
   /**
    * Add the half-open range $[\text{begin},\text{end})$ to the set of indices
    * represented by this class.
+   * @param[in] begin The first element of the range to be added.
+   * @param[in] end The past-the-end element of the range to be added.
    */
   void add_range (const size_type begin,
                   const size_type end);
@@ -149,7 +151,13 @@ public:
 
   /**
    * Add a whole set of indices described by dereferencing every element of
-   * the the iterator range <code>[begin,end)</code>.
+   * the iterator range <code>[begin,end)</code>.
+   *
+   * @param[in] begin Iterator to the first element of range of indices
+   *   to be added
+   * @param[in] end The past-the-end iterator for the range of elements
+   *   to be added.
+   * @pre The condition <code>begin@<=end</code> needs to be satisfied.
    */
   template <typename ForwardIterator>
   void add_indices (const ForwardIterator &begin,
@@ -1203,28 +1211,6 @@ IndexSet::IndexSet (const size_type size)
   index_space_size (size),
   largest_range (numbers::invalid_unsigned_int)
 {}
-
-
-
-
-#ifdef DEAL_II_WITH_TRILINOS
-inline
-IndexSet::IndexSet (const Epetra_Map &map)
-  :
-  is_compressed (true),
-  index_space_size (map.NumGlobalElements()),
-  largest_range (numbers::invalid_unsigned_int)
-{
-  const size_type n_indices = map.NumMyElements();
-#ifndef DEAL_II_WITH_64BIT_INDICES
-  unsigned int *indices = (unsigned int *)map.MyGlobalElements();
-#else
-  size_type *indices = (size_type *)map.MyGlobalElements64();
-#endif
-  add_indices(indices, indices+n_indices);
-  compress();
-}
-#endif
 
 
 

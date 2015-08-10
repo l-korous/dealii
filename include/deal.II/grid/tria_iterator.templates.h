@@ -85,38 +85,6 @@ TriaRawIterator<Accessor>::operator = (const TriaRawIterator<Accessor> &i)
 }
 
 
-// template <typename Accessor>
-// template <typename OtherAccessor>
-// inline
-// TriaRawIterator<Accessor> &
-// TriaRawIterator<Accessor>::operator = (const TriaRawIterator<OtherAccessor> &i)
-// {
-//   accessor.copy_from (i.accessor);
-//   return *this;
-// }
-
-
-// template <typename Accessor>
-// template <typename OtherAccessor>
-// inline
-// TriaRawIterator<Accessor> &
-// TriaRawIterator<Accessor>::operator = (const TriaIterator<OtherAccessor> &i)
-// {
-//   accessor.copy_from (i.accessor);
-//   return *this;
-// }
-
-
-// template <typename Accessor>
-// template <typename OtherAccessor>
-// inline
-// TriaRawIterator<Accessor> &
-// TriaRawIterator<Accessor>::operator = (const TriaActiveIterator<OtherAccessor> &i)
-// {
-//   accessor.copy_from (i.accessor);
-//   return *this;
-// }
-
 
 template <typename Accessor>
 inline
@@ -478,7 +446,7 @@ TriaActiveIterator<Accessor>::operator = (const TriaRawIterator<Accessor> &i)
   // do this like this, because:
   // if we write
   // "Assert (IteratorState::past_the_end || !has_children())"
-  // has_chidlren() is called anyway, even if
+  // has_children() is called anyway, even if
   // state==IteratorState::past_the_end, and will then
   // throw the exception!
   if (this->state() != IteratorState::past_the_end)
@@ -500,7 +468,7 @@ TriaActiveIterator<Accessor>::operator = (const TriaRawIterator<OtherAccessor> &
   // do this like this, because:
   // if we write
   // "Assert (IteratorState::past_the_end || !has_children())"
-  // has_chidlren() is called anyway, even if
+  // has_children() is called anyway, even if
   // state==IteratorState::past_the_end, and will then
   // throw the exception!
   if (this->state() != IteratorState::past_the_end)

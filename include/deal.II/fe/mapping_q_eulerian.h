@@ -82,7 +82,7 @@ DEAL_II_NAMESPACE_OPEN
  * parallel codes using the PETSc wrapper classes, the type of the vector can
  * be specified as template parameter <tt>EulerVectorType</tt> Not specifying
  * this template argument in applications using the PETSc vector classes leads
- * to the construction of a copy of the vector which is not acccessible
+ * to the construction of a copy of the vector which is not accessible
  * afterwards!
  *
  * @author Joshua White, 2008
@@ -94,14 +94,14 @@ public:
   /**
    * Constructor.
    *
-   * @param[in] degree The polynomical degree of the desired $Q_p$ mapping.
+   * @param[in] degree The polynomial degree of the desired $Q_p$ mapping.
    * @param[in] euler_dof_handler A DoFHandler object that defines a finite
    * element space. This space needs to have at least dim components and the
    * first dim components of the space will be considered displacements
    * relative to the original positions of the cells of the triangulation.
    * @param[in] euler_vector A finite element function in the space defined by
    * the second argument. The first dim components of this function will be
-   * interpreted as the displacement we use in definining the mapping,
+   * interpreted as the displacement we use in defining the mapping,
    * relative to the location of cells of the underlying triangulation.
    */
   MappingQEulerian (const unsigned int              degree,
@@ -150,12 +150,11 @@ protected:
                   const CellSimilarity::Similarity                           cell_similarity,
                   const Quadrature<dim>                                     &quadrature,
                   const typename Mapping<dim,spacedim>::InternalDataBase    &internal_data,
-                  FEValuesData<dim,spacedim>                                &output_data) const;
+                  internal::FEValues::MappingRelatedData<dim,spacedim>      &output_data) const;
 
   /**
    * Reference to the vector of shifts.
    */
-
   SmartPointer<const VECTOR, MappingQEulerian<dim,VECTOR,spacedim> > euler_vector;
 
   /**

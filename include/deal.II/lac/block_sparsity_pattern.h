@@ -128,9 +128,9 @@ public:
 
   /**
    * Resize the matrix, by setting the number of block rows and columns. This
-   * deletes all blocks and replaces them by unitialized ones, i.e. ones for
-   * which also the sizes are not yet set. You have to do that by calling the
-   * reinit() functions of the blocks themselves. Do not forget to call
+   * deletes all blocks and replaces them with uninitialized ones, i.e. ones
+   * for which also the sizes are not yet set. You have to do that by calling
+   * the reinit() functions of the blocks themselves. Do not forget to call
    * collect_sizes() after that on this object.
    *
    * The reason that you have to set sizes of the blocks yourself is that the
@@ -653,8 +653,10 @@ namespace TrilinosWrappers
      * the degrees of freedom on the individual block.  This function is
      * equivalent to calling the second constructor with the length of the
      * mapping vector and then entering the index values.
+     *
+     * @deprecated Use the respective method with IndexSet arguments instead.
      */
-    BlockSparsityPattern (const std::vector<Epetra_Map> &parallel_partitioning);
+    BlockSparsityPattern (const std::vector<Epetra_Map> &parallel_partitioning) DEAL_II_DEPRECATED;
 
     /**
      * Initialize the pattern with an array of index sets that specifies both
@@ -698,8 +700,10 @@ namespace TrilinosWrappers
      * Resize the matrix to a square tensor product of matrices with parallel
      * distribution according to the specifications in the array of
      * Epetra_Maps.
+     *
+     * @deprecated Use the respective method with IndexSet arguments instead.
      */
-    void reinit (const std::vector<Epetra_Map> &parallel_partitioning);
+    void reinit (const std::vector<Epetra_Map> &parallel_partitioning) DEAL_II_DEPRECATED;
 
     /**
      * Resize the matrix to a square tensor product of matrices. See the

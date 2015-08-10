@@ -324,11 +324,11 @@ public:
    */
   virtual
   CellSimilarity::Similarity
-  fill_fe_values (const typename Triangulation<dim,spacedim>::cell_iterator &cell,
-                  const CellSimilarity::Similarity                           cell_similarity,
-                  const Quadrature<dim>                                     &quadrature,
-                  const typename Mapping<dim,spacedim>::InternalDataBase    &internal_data,
-                  FEValuesData<dim,spacedim>                                &output_data) const;
+  fill_fe_values (const typename Triangulation<dim,spacedim>::cell_iterator     &cell,
+                  const CellSimilarity::Similarity                               cell_similarity,
+                  const Quadrature<dim>                                         &quadrature,
+                  const typename Mapping<dim,spacedim>::InternalDataBase        &internal_data,
+                  dealii::internal::FEValues::MappingRelatedData<dim, spacedim> &output_data) const;
 
   /**
    * Compute mapping-related information for a face of a cell.
@@ -336,11 +336,11 @@ public:
    * a discussion of purpose and arguments of this function.
    */
   virtual void
-  fill_fe_face_values (const typename Triangulation<dim,spacedim>::cell_iterator &cell,
-                       const unsigned int                                         face_no,
-                       const Quadrature<dim-1>                                   &quadrature,
-                       const typename Mapping<dim,spacedim>::InternalDataBase    &internal_data,
-                       FEValuesData<dim,spacedim>                                &output_data) const;
+  fill_fe_face_values (const typename Triangulation<dim,spacedim>::cell_iterator     &cell,
+                       const unsigned int                                             face_no,
+                       const Quadrature<dim-1>                                       &quadrature,
+                       const typename Mapping<dim,spacedim>::InternalDataBase        &internal_data,
+                       dealii::internal::FEValues::MappingRelatedData<dim, spacedim> &output_data) const;
 
   /**
    * Compute mapping-related information for a child of a face of a cell.
@@ -348,12 +348,12 @@ public:
    * a discussion of purpose and arguments of this function.
    */
   virtual void
-  fill_fe_subface_values (const typename Triangulation<dim,spacedim>::cell_iterator &cell,
-                          const unsigned int                                         face_no,
-                          const unsigned int                                         subface_no,
-                          const Quadrature<dim-1>                                   &quadrature,
-                          const typename Mapping<dim,spacedim>::InternalDataBase    &internal_data,
-                          FEValuesData<dim,spacedim>                                &output_data) const;
+  fill_fe_subface_values (const typename Triangulation<dim,spacedim>::cell_iterator     &cell,
+                          const unsigned int                                             face_no,
+                          const unsigned int                                             subface_no,
+                          const Quadrature<dim-1>                                       &quadrature,
+                          const typename Mapping<dim,spacedim>::InternalDataBase        &internal_data,
+                          dealii::internal::FEValues::MappingRelatedData<dim, spacedim> &output_data) const;
 
   /**
    * Compute shape values and/or derivatives.
@@ -385,33 +385,6 @@ public:
                           const Quadrature<dim> &quadrature,
                           const unsigned int n_orig_q_points,
                           InternalData &data) const;
-
-  /**
-   * Do the computation for the <tt>fill_*</tt> functions.
-   */
-  void compute_fill (const typename Triangulation<dim,spacedim>::cell_iterator &cell,
-                     const unsigned int      npts,
-                     const DataSetDescriptor data_set,
-                     const CellSimilarity::Similarity cell_similarity,
-                     const InternalData           &data,
-                     std::vector<Point<spacedim> > &quadrature_points) const;
-
-  /**
-   * Do the computation for the <tt>fill_*</tt> functions.
-   */
-  void compute_fill_face (const typename Triangulation<dim,spacedim>::cell_iterator &cell,
-                          const unsigned int                face_no,
-                          const unsigned int                subface_no,
-                          const unsigned int                npts,
-                          const DataSetDescriptor           data_set,
-                          const std::vector<double>        &weights,
-                          const InternalData                     &mapping_data,
-                          std::vector<Point<spacedim> >    &quadrature_points,
-                          std::vector<double>              &JxW_values,
-                          std::vector<Tensor<1,spacedim> > &boundary_form,
-                          std::vector<Point<spacedim> >    &normal_vectors,
-                          std::vector<DerivativeForm<1,dim,spacedim> > &jacobians,
-                          std::vector<DerivativeForm<1,spacedim,dim> > &inverse_jacobians) const;
 
   /**
    * Compute shape values and/or derivatives.
@@ -493,7 +466,7 @@ protected:
    * i-th column of Y is real_vertex[i].  If we split X=[A|b], the least
    * square approx is A x_hat+b  Classically  X = Y * (M^t (M M^t)^{-1})  Let
    * K = M^t * (M M^t)^{-1} = [KA Kb] this can be precomputed, and that is
-   * exactely what we do.  Finally A = Y*KA  and  b = Y*Kb.
+   * exactly what we do.  Finally A = Y*KA  and  b = Y*Kb.
    */
   Point<dim>
   transform_real_to_unit_cell_initial_guess (const std::vector<Point<spacedim> > &vertex,

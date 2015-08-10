@@ -286,6 +286,7 @@ namespace deal_II_exceptions
  *
  * See the <tt>ExceptionBase</tt> class for more information.
  *
+ * @note Active in DEBUG mode only
  * @ingroup Exceptions
  * @author Wolfgang Bangerth, 1997, 1998, Matthias Maier, 2013
  */
@@ -314,6 +315,7 @@ namespace deal_II_exceptions
  *
  * See the <tt>ExceptionBase</tt> class for more information.
  *
+ * @note Active in DEBUG mode only
  * @ingroup Exceptions
  * @author Wolfgang Bangerth, 1997, 1998, Matthias Maier, 2013
  */
@@ -340,7 +342,7 @@ namespace deal_II_exceptions
  *
  * See the <tt>ExceptionBase</tt> class for more information.
  *
- * @ref ExceptionBase
+ * @note Active in both DEBUG and RELEASE modes
  * @ingroup Exceptions
  * @author Wolfgang Bangerth, 1997, 1998, Matthias Maier, 2013
  */
@@ -1002,7 +1004,7 @@ namespace StandardExceptions
                     "information.");
 
   /**
-   * Some of our numerical classes allow for setting alll entries to zero
+   * Some of our numerical classes allow for setting all entries to zero
    * using the assignment operator <tt>=</tt>.
    *
    * In many cases, this assignment operator makes sense <b>only</b> for the
