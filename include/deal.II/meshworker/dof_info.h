@@ -111,13 +111,7 @@ namespace MeshWorker
      * Constructor leaving the #block_info pointer empty, but setting the
      * #aux_local_indices.
      */
-    explicit DoFInfo(const DoFHandler<dim, spacedim> &dof_handler);
-
-    /**
-    * Constructor leaving the #block_info pointer empty, but setting the
-    * #aux_local_indices.
-    */
-    explicit DoFInfo(const hp::DoFHandler<dim, spacedim> &dof_handler);
+    DoFInfo (const DoFHandler<dim, spacedim> &dof_handler);
 
     /**
      * Set the current cell and fill @p indices.
@@ -278,22 +272,12 @@ namespace MeshWorker
 //----------------------------------------------------------------------//
 
   template <int dim, int spacedim, typename number>
-  DoFInfo<dim, spacedim, number>::DoFInfo(const dealii::DoFHandler<dim, spacedim> &dof_handler)
+  DoFInfo<dim,spacedim,number>::DoFInfo(const DoFHandler<dim,spacedim> &dof_handler)
     :
-    level_cell(false)
+    level_cell (false)
   {
     std::vector<types::global_dof_index> aux(1);
     aux[0] = dof_handler.get_fe().dofs_per_cell;
-    aux_local_indices.reinit(aux);
-  }
-
-  template <int dim, int spacedim, typename number>
-  DoFInfo<dim, spacedim, number>::DoFInfo(const dealii::hp::DoFHandler<dim, spacedim> &dof_handler)
-    :
-    level_cell(false)
-  {
-    std::vector<types::global_dof_index> aux(1);
-    aux[0] = dof_handler.get_fe().max_dofs_per_cell();
     aux_local_indices.reinit(aux);
   }
 
@@ -340,7 +324,7 @@ namespace MeshWorker
     const DHFaceIterator &f,
     const unsigned int face_no)
   {
-    face = static_cast<typename Triangulation<dim>::face_iterator> (f);
+    face = static_cast<typename Triangulation<dim, spacedim>::face_iterator> (f);
     face_number = face_no;
     sub_number = numbers::invalid_unsigned_int;
   }
@@ -355,11 +339,11 @@ namespace MeshWorker
     const unsigned int face_no)
   {
     if ((cell.state() != IteratorState::valid)
-        ||  cell != typename Triangulation<dim>::cell_iterator(*c))
+        ||  cell != typename Triangulation<dim, spacedim>::cell_iterator(*c))
       get_indices(c);
     level_cell = c->is_level_cell();
 
-    cell = typename Triangulation<dim>::cell_iterator(*c);
+    cell = typename Triangulation<dim, spacedim>::cell_iterator(*c);
     set_face(f,face_no);
 
     if (block_info)
@@ -377,7 +361,7 @@ namespace MeshWorker
     const unsigned int face_no,
     const unsigned int subface_no)
   {
-    face = static_cast<typename Triangulation<dim>::face_iterator> (f);
+    face = static_cast<typename Triangulation<dim, spacedim>::face_iterator> (f);
     face_number = face_no;
     sub_number = subface_no;
   }
@@ -393,11 +377,11 @@ namespace MeshWorker
     const unsigned int subface_no)
   {
     if (cell.state() != IteratorState::valid
-        || cell != static_cast<typename Triangulation<dim>::cell_iterator> (c))
+        || cell != static_cast<typename Triangulation<dim, spacedim>::cell_iterator> (c))
       get_indices(c);
     level_cell = c->is_level_cell();
 
-    cell = static_cast<typename Triangulation<dim>::cell_iterator> (c);
+    cell = static_cast<typename Triangulation<dim, spacedim>::cell_iterator> (c);
     set_subface(f, face_no, subface_no);
 
     if (block_info)

@@ -165,7 +165,7 @@ namespace MeshWorker
      * one vector for each component, containing vectors with values for each
      * quadrature point.
      */
-    std::vector<std::vector<std::vector<Tensor<1,dim> > > > gradients;
+    std::vector<std::vector<std::vector<Tensor<1,spacedim> > > > gradients;
 
     /**
      * The vector containing the second derivatives of finite element
@@ -175,7 +175,7 @@ namespace MeshWorker
      * one vector for each component, containing vectors with values for each
      * quadrature point.
      */
-    std::vector<std::vector<std::vector<Tensor<2,dim> > > > hessians;
+    std::vector<std::vector<std::vector<Tensor<2, spacedim> > > > hessians;
 
     /**
      * Reinitialize internal data structures for use on a cell.
