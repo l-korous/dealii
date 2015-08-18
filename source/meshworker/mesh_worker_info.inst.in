@@ -16,6 +16,7 @@
 
 for (deal_II_dimension : DIMENSIONS; deal_II_space_dimension :  SPACE_DIMENSIONS)
   {
+  #if deal_II_dimension <= deal_II_space_dimension
 namespace MeshWorker
 \{
 
@@ -47,4 +48,5 @@ namespace MeshWorker
 //     const FiniteElement<deal_II_dimension>&, const Mapping<deal_II_dimension>&,
 //     const Quadrature<FESubfaceValues<deal_II_dimension>::integral_dimension>&, const UpdateFlags, const BlockInfo*);
 \}
+#endif
   }

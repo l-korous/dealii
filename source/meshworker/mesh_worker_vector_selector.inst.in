@@ -17,14 +17,17 @@
 
 for (deal_II_dimension : DIMENSIONS; deal_II_space_dimension :  SPACE_DIMENSIONS)
 {
+  #if deal_II_dimension <= deal_II_space_dimension
   namespace MeshWorker
   \{
     template class VectorDataBase<deal_II_dimension, deal_II_space_dimension>;
   \}
+  #endif
 }
 
 for (VECTOR : SERIAL_VECTORS ; deal_II_dimension : DIMENSIONS; deal_II_space_dimension :  SPACE_DIMENSIONS)
 {
+  #if deal_II_dimension <= deal_II_space_dimension
   namespace MeshWorker
   \{
     template class VectorData<VECTOR,deal_II_dimension, deal_II_space_dimension>;
@@ -32,4 +35,5 @@ for (VECTOR : SERIAL_VECTORS ; deal_II_dimension : DIMENSIONS; deal_II_space_dim
     template class MGVectorData<VECTOR,deal_II_dimension, deal_II_space_dimension>;
     template class MGVectorData<const VECTOR,deal_II_dimension, deal_II_space_dimension>;
   \}
+  #endif
 }
