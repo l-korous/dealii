@@ -18,6 +18,7 @@
 
 
 #include <deal.II/fe/fe.h>
+#include <deal.II/base/qprojector.h>
 
 DEAL_II_NAMESPACE_OPEN
 
