@@ -150,7 +150,7 @@ namespace boost {
             f = reinterpret_cast<FunctionObj*>(&function_obj_ptr.data);
           else
             f = reinterpret_cast<FunctionObj*>(function_obj_ptr.obj_ptr);
-          BOOST_FUNCTION_RETURN((*f)(BOOST_FUNCTION_ARGS));
+          //BOOST_FUNCTION_RETURN((*f)(BOOST_FUNCTION_ARGS));
         }
       };
 
