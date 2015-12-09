@@ -52,6 +52,7 @@
 // We will compose the vector-valued finite elements from regular Q1 elements
 // which can be found here, as usual:
 #include <deal.II/fe/fe_q.h>
+#include <deal.II/fe/fe_dgq.h>
 
 // This again is C++:
 #include <fstream>
@@ -105,6 +106,9 @@ namespace Step8
 
     Vector<double>       solution;
     Vector<double>       system_rhs;
+
+    void process_matrix_total_current(SparseMatrix<double>& system_matrix);
+    void process_rhs_total_current(Vector<double>& system_rhs);
   };
 
 
@@ -191,10 +195,6 @@ namespace Step8
   void RightHandSide<dim>::vector_value (const Point<dim> &p,
                                          Vector<double>   &values) const
   {
-    Assert (values.size() == dim,
-            ExcDimensionMismatch (values.size(), dim));
-    Assert (dim >= 2, ExcNotImplemented());
-
     // The rest of the function implements computing force values. We will use
     // a constant (unit) force in x-direction located in two little circles
     // (or spheres, in 3d) around points (0.5,0) and (-0.5,0), and y-force in
@@ -302,7 +302,7 @@ namespace Step8
   ElasticProblem<dim>::ElasticProblem ()
     :
     dof_handler (triangulation),
-    fe (FE_Q<dim>(1), dim)
+    fe(FE_Q<dim>(1), dim, FE_DGQ<dim>(0), 1)
   {}
   // In fact, the <code>FESystem</code> class has several more constructors
   // which can perform more complex operations than just stacking together
@@ -413,7 +413,7 @@ namespace Step8
     // <code>Vector@<double@></code> with <code>dim</code> elements.
     RightHandSide<dim>      right_hand_side;
     std::vector<Vector<double> > rhs_values (n_q_points,
-                                             Vector<double>(dim));
+                                             Vector<double>(dim + 1));
 
 
     // Now we can begin with the loop over all cells:
@@ -460,11 +460,17 @@ namespace Step8
           {
             const unsigned int
             component_i = fe.system_to_component_index(i).first;
+            
+            if (component_i >= dim)
+              continue;
 
             for (unsigned int j=0; j<dofs_per_cell; ++j)
               {
                 const unsigned int
                 component_j = fe.system_to_component_index(j).first;
+
+                if (component_j >= dim)
+                  continue;
 
                 for (unsigned int q_point=0; q_point<n_q_points;
                      ++q_point)
@@ -544,8 +550,12 @@ namespace Step8
           }
       }
 
-    hanging_node_constraints.condense (system_matrix);
-    hanging_node_constraints.condense (system_rhs);
+    ///// Celkovy proud - custom handling
+    this->process_matrix_total_current(system_matrix);
+    this->process_rhs_total_current(system_rhs);
+
+    hanging_node_constraints.condense(system_matrix);
+    hanging_node_constraints.condense(system_rhs);
 
     // The interpolation of the boundary values needs a small modification:
     // since the solution function is vector-valued, so need to be the
@@ -567,7 +577,121 @@ namespace Step8
                                         system_rhs);
   }
 
+  template <int dim>
+  void ElasticProblem<dim>::process_matrix_total_current(SparseMatrix<double>& system_matrix)
+  {
+    QGauss<dim>  quadrature_formula(2);
 
+    FEValues<dim> fe_values(fe, quadrature_formula,
+      update_values | update_gradients |
+      update_quadrature_points | update_JxW_values);
+
+    const unsigned int   dofs_per_cell = fe.dofs_per_cell;
+    const unsigned int   n_q_points = quadrature_formula.size();
+
+    FullMatrix<double>   cell_matrix(dofs_per_cell, dofs_per_cell);
+    Vector<double>       cell_rhs(dofs_per_cell);
+
+    std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
+
+    // As was shown in previous examples as well, we need a place where to
+    // store the values of the coefficients at all the quadrature points on a
+    // cell. In the present situation, we have two coefficients, lambda and
+    // mu.
+    std::vector<double>     lambda_values(n_q_points);
+    std::vector<double>     mu_values(n_q_points);
+
+    // Well, we could as well have omitted the above two arrays since we will
+    // use constant coefficients for both lambda and mu, which can be declared
+    // like this. They both represent functions always returning the constant
+    // value 1.0. Although we could omit the respective factors in the
+    // assemblage of the matrix, we use them here for purpose of
+    // demonstration.
+    ConstantFunction<dim> lambda(1.), mu(1.);
+
+    // Then again, we need to have the same for the right hand side. This is
+    // exactly as before in previous examples. However, we now have a
+    // vector-valued right hand side, which is why the data type of the
+    // <code>rhs_values</code> array is changed. We initialize it by
+    // <code>n_q_points</code> elements, each of which is a
+    // <code>Vector@<double@></code> with <code>dim</code> elements.
+    RightHandSide<dim>      right_hand_side;
+    std::vector<Vector<double> > rhs_values(n_q_points,
+      Vector<double>(dim + 1));
+
+    unsigned int main_equation_index = 0;
+
+    typename DoFHandler<dim>::active_cell_iterator cell = dof_handler.begin_active(),
+      endc = dof_handler.end();
+    for (; cell != endc; ++cell)
+    {
+      cell_matrix = 0;
+      cell_rhs = 0;
+
+      fe_values.reinit(cell);
+
+      lambda.value_list(fe_values.get_quadrature_points(), lambda_values);
+      mu.value_list(fe_values.get_quadrature_points(), mu_values);
+
+      cell->get_dof_indices(local_dof_indices);
+
+      right_hand_side.vector_value_list(fe_values.get_quadrature_points(),
+        rhs_values);
+
+      if (main_equation_index == 0) {
+        for (unsigned int i = 0; i < dofs_per_cell; ++i)
+        {
+          const unsigned int
+            component_i = fe.system_to_component_index(i).first;
+
+          if (component_i < dim)
+            continue;
+
+          for (unsigned int j = 0; j < dofs_per_cell; ++j)
+          {
+            const unsigned int
+              component_j = fe.system_to_component_index(j).first;
+
+            if ((component_j == 0 || component_j == dim) && main_equation_index == 0) {
+              main_equation_index = local_dof_indices[i];
+              for (unsigned int q_point = 0; q_point < n_q_points;
+                ++q_point)
+              {
+                cell_matrix(i, j)
+                  +=
+             fe_values.shape_value(i, q_point) *
+                  fe_values.shape_value(j, q_point) *
+                  fe_values.JxW(q_point);
+              }
+            }
+          }
+        }
+
+        for (unsigned int i = 0; i<dofs_per_cell; ++i)
+        {
+          for (unsigned int j = 0; j<dofs_per_cell; ++j)
+            system_matrix.add(local_dof_indices[i],
+            local_dof_indices[j],
+            cell_matrix(i, j));
+        }
+      }
+      else {
+        for (unsigned int i = 0; i<dofs_per_cell; ++i)
+          system_matrix.add(local_dof_indices[i],
+          main_equation_index,
+          1.);
+        for (unsigned int i = 0; i<dofs_per_cell; ++i)
+          system_matrix.add(local_dof_indices[i],
+          local_dof_indices[i],
+          -1.);
+      }
+    }
+  }
+
+  template <int dim>
+  void ElasticProblem<dim>::process_rhs_total_current(Vector<double>& system_rhs)
+  {
+  }
 
   // @sect4{ElasticProblem::solve}
 
@@ -634,9 +758,8 @@ namespace Step8
   {
     std::string filename = "solution-";
     filename += ('0' + cycle);
-    Assert (cycle < 10, ExcInternalError());
-
     filename += ".vtk";
+    
     std::ofstream output (filename.c_str());
 
     DataOut<dim> data_out;
@@ -740,7 +863,7 @@ namespace Step8
   template <int dim>
   void ElasticProblem<dim>::run ()
   {
-    for (unsigned int cycle=0; cycle<8; ++cycle)
+    for (unsigned int cycle=0; cycle<13; ++cycle)
       {
         std::cout << "Cycle " << cycle << ':' << std::endl;
 
