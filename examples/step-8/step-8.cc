@@ -17,6 +17,7 @@
  * Author: Wolfgang Bangerth, University of Heidelberg, 2000
  */
 
+const bool PRINT_ALGEBRA = true;
 
 // @sect3{Include files}
 
@@ -27,6 +28,7 @@
 #include <deal.II/base/logstream.h>
 #include <deal.II/lac/vector.h>
 #include <deal.II/lac/full_matrix.h>
+#include <deal.II/lac/sparse_direct.h>
 #include <deal.II/lac/sparse_matrix.h>
 #include <deal.II/lac/dynamic_sparsity_pattern.h>
 #include <deal.II/lac/solver_cg.h>
@@ -298,7 +300,7 @@ namespace Step8
     std::map<types::global_dof_index, double> boundary_values;
     VectorTools::interpolate_boundary_values(dof_handler,
       0,
-      ZeroFunction<dim>(dim),
+      ZeroFunction<dim>(dim + 1),
       boundary_values);
     MatrixTools::apply_boundary_values(boundary_values,
       system_matrix,
@@ -387,15 +389,6 @@ namespace Step8
 
     std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
 
-    std::vector<double>     lambda_values(n_q_points);
-    std::vector<double>     mu_values(n_q_points);
-
-    ConstantFunction<dim> lambda(1.), mu(1.);
-
-    RightHandSide<dim>      right_hand_side;
-    std::vector<Vector<double> > rhs_values(n_q_points,
-      Vector<double>(dim + 1));
-
     typename DoFHandler<dim>::active_cell_iterator cell = dof_handler.begin_active(),
       endc = dof_handler.end();
     for (; cell != endc; ++cell)
@@ -405,13 +398,7 @@ namespace Step8
 
       fe_values.reinit(cell);
 
-      lambda.value_list(fe_values.get_quadrature_points(), lambda_values);
-      mu.value_list(fe_values.get_quadrature_points(), mu_values);
-
       cell->get_dof_indices(local_dof_indices);
-
-      right_hand_side.vector_value_list(fe_values.get_quadrature_points(),
-        rhs_values);
 
       bool is_this_main_equation = false;
 
@@ -422,12 +409,6 @@ namespace Step8
         else
           is_this_main_equation = true;
 
-        const unsigned int
-          component_i = fe.system_to_component_index(i).first;
-
-        if (component_i < dim)
-          continue;
-
         for (unsigned int j = 0; j < dofs_per_cell; ++j)
         {
           const unsigned int
@@ -436,7 +417,7 @@ namespace Step8
           // component_j == 0 -> to je tady simulace nejakeho clenu ktery v realu je
           // vypocet indukovanych proudu, cili gamma * (v x B)
           // component_j == dim je pak skutecne to co chceme distribuovat a sice J_{ext}
-          if (component_j == 0 || component_j == dim) {
+          if ((component_j == 0) || (component_j == dim)) {
             for (unsigned int q_point = 0; q_point < n_q_points;
               ++q_point)
             {
@@ -445,17 +426,22 @@ namespace Step8
                 fe_values.shape_value(i, q_point) *
                 fe_values.shape_value(j, q_point) *
                 fe_values.JxW(q_point);
+              std::cout << "comp " << component_j << " i: " << i << " : " << fe_values.shape_value(i, q_point) << std::endl;
+              std::cout << "comp " << component_j << " j: " << j << " : " << fe_values.shape_value(j, q_point) << std::endl;
             }
           }
         }
       }
 
-      for (unsigned int i = 0; i < dofs_per_cell; ++i)
+      if (is_this_main_equation)
       {
-        for (unsigned int j = 0; j < dofs_per_cell; ++j)
-          system_matrix.add(local_dof_indices[i],
-          local_dof_indices[j],
-          cell_matrix(i, j));
+        for (unsigned int i = 0; i < dofs_per_cell; ++i)
+        {
+          for (unsigned int j = 0; j < dofs_per_cell; ++j)
+            system_matrix.add(local_dof_indices[i],
+            local_dof_indices[j],
+            cell_matrix(i, j));
+        }
       }
 
       if (!is_this_main_equation)
@@ -482,21 +468,55 @@ namespace Step8
   template <int dim>
   void ElasticProblem<dim>::process_rhs_total_current(Vector<double>& system_rhs)
   {
+    const unsigned int   dofs_per_cell = fe.dofs_per_cell;
+
+    std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
+
+    typename DoFHandler<dim>::active_cell_iterator cell = dof_handler.begin_active(),
+      endc = dof_handler.end();
+    for (; cell != endc; ++cell)
+    {
+      cell->get_dof_indices(local_dof_indices);
+
+      for (unsigned int i = 0; i < dofs_per_cell; ++i)
+      {
+        if (main_equation_index != local_dof_indices[i])
+          continue;
+        else // The following means literaly "5 Amper"
+          system_rhs(local_dof_indices[i]) = 5.;
+      }
+    }
   }
 
   template <int dim>
   void ElasticProblem<dim>::solve()
   {
-    SolverControl           solver_control(1000, 1e-12);
-    SolverCG<>              cg(solver_control);
+    if (PRINT_ALGEBRA)
+    {
+      std::cout << "  Printing system... " << std::endl;
 
-    PreconditionSSOR<> preconditioner;
-    preconditioner.initialize(system_matrix, 1.2);
+      std::string matrix_file = "Matrix.txt";
+      std::string rhs_file = "Rhs.txt";
 
-    cg.solve(system_matrix, solution, system_rhs,
-      preconditioner);
+      std::ofstream matrix_out(matrix_file);
+      std::ofstream rhs_out(rhs_file);
 
-    hanging_node_constraints.distribute(solution);
+      matrix_out << std::fixed;
+      rhs_out << std::fixed;
+      matrix_out << std::setprecision(6);
+      rhs_out << std::setprecision(6);
+      system_matrix.print(matrix_out, false, false);
+      system_rhs.print(rhs_out, 6, false, false);
+
+      matrix_out.close();
+      rhs_out.close();
+    }
+
+    dealii::SparseDirectUMFPACK solver;
+
+    solver.initialize(system_matrix);
+
+    solver.vmult(solution, system_rhs);
   }
 
   template <int dim>
@@ -533,15 +553,18 @@ namespace Step8
     {
     case 1:
       solution_names.push_back("displacement");
+      solution_names.push_back("total_current");
       break;
     case 2:
       solution_names.push_back("x_displacement");
       solution_names.push_back("y_displacement");
+      solution_names.push_back("total_current");
       break;
     case 3:
       solution_names.push_back("x_displacement");
       solution_names.push_back("y_displacement");
       solution_names.push_back("z_displacement");
+      solution_names.push_back("total_current");
       break;
     default:
       Assert(false, ExcNotImplemented());
@@ -555,8 +578,8 @@ namespace Step8
   template <int dim>
   void ElasticProblem<dim>::run()
   {
-    GridGenerator::hyper_cube(triangulation, -1, 1);
-    triangulation.refine_global(6);
+    GridGenerator::hyper_cube(triangulation, -1., 1.);
+    triangulation.refine_global(1);
 
     std::cout << "   Number of active cells:       "
       << triangulation.n_active_cells()
