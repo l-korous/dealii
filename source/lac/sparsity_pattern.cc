@@ -478,25 +478,27 @@ SparsityPattern::compress ()
   compressed = true;
 }
 
-
-
 template <typename DSP>
 void
-SparsityPattern::copy_from (const DSP &dsp)
+SparsityPattern::copy_from(const DSP &dsp, size_type inflate_by)
 {
   // first determine row lengths for each row. if the matrix is quadratic,
   // then we might have to add an additional entry for the diagonal, if that
   // is not yet present. as we have to call compress anyway later on, don't
   // bother to check whether that diagonal entry is in a certain row or not
   const bool do_diag_optimize = (dsp.n_rows() == dsp.n_cols());
-  std::vector<unsigned int> row_lengths (dsp.n_rows());
-  for (size_type i=0; i<dsp.n_rows(); ++i)
+  std::vector<unsigned int> row_lengths(dsp.n_rows() + inflate_by);
+  for (size_type i = 0; i<dsp.n_rows(); ++i)
     {
-      row_lengths[i] = dsp.row_length(i);
+      row_lengths[i] = dsp.row_length(i) + inflate_by;
       if (do_diag_optimize && !dsp.exists(i,i))
         ++row_lengths[i];
     }
-  reinit (dsp.n_rows(), dsp.n_cols(), row_lengths);
+
+  for(size_type i = dsp.n_rows(); i < dsp.n_rows() + inflate_by; ++i)
+    row_lengths[i] = dsp.n_cols() + inflate_by;
+
+  reinit(dsp.n_rows() + inflate_by, dsp.n_cols() + inflate_by, row_lengths);
 
   // now enter all the elements into the matrix, if there are any. note that
   // if the matrix is quadratic, then we already have the diagonal element
@@ -514,7 +516,22 @@ SparsityPattern::copy_from (const DSP &dsp)
             if ((col!=row) || !do_diag_optimize)
               *cols++ = col;
           }
+        for (size_type i = 0; i < inflate_by; i++)
+        {
+          *cols++ = dsp.n_cols() + i;
+        }
       }
+
+  for(size_type row = dsp.n_rows(); row < dsp.n_rows() + inflate_by; ++row)
+  {
+    size_type *cols = &colnums[rowstart[row]] + (do_diag_optimize ? 1 : 0);
+
+    for (size_type col = 0; col < dsp.n_cols() + inflate_by; ++col)
+    {
+      if ((col != row) || !do_diag_optimize)
+        *cols++ = col;
+    }
+  }
 
   // do not need to compress the sparsity pattern since we already have
   // allocated the right amount of data, and the DSP data is sorted, too.
@@ -965,8 +982,8 @@ SparsityPattern::memory_consumption () const
 
 
 // explicit instantiations
-template void SparsityPattern::copy_from<SparsityPattern> (const SparsityPattern &);
-template void SparsityPattern::copy_from<DynamicSparsityPattern> (const DynamicSparsityPattern &);
+template void SparsityPattern::copy_from<SparsityPattern>(const SparsityPattern &, size_type inflate_by);
+template void SparsityPattern::copy_from<DynamicSparsityPattern>(const DynamicSparsityPattern &, size_type inflate_by);
 template void SparsityPattern::copy_from<float> (const FullMatrix<float> &);
 template void SparsityPattern::copy_from<double> (const FullMatrix<double> &);
 

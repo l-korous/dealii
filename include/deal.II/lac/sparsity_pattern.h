@@ -621,7 +621,7 @@ public:
    * mode afterwards.
    */
   template <typename CompressedSparsityType>
-  void copy_from (const CompressedSparsityType &dsp);
+  void copy_from(const CompressedSparsityType &dsp, size_type inflate_by = 0);
 
 
   /**
