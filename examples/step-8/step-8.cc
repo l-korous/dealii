@@ -24,7 +24,7 @@ const double TOTAL_CURRENT = 1.;
 // Init ref
 const unsigned int INIT_REF_NUM = 1;
 const double M_PI = 3.141592654;
-#define INCLUDE_TOTAL_CURRENT 1
+#define INCLUDE_TOTAL_CURRENT 0
 
 // @sect3{Include files}
 
@@ -35,7 +35,7 @@ const double M_PI = 3.141592654;
 #include <deal.II/base/logstream.h>
 #include <deal.II/lac/vector.h>
 #include <deal.II/lac/full_matrix.h>
-#include <deal.II/lac/sparse_direct.h>
+//#include <deal.II/lac/sparse_direct.h>
 #include <deal.II/lac/sparse_matrix.h>
 #include <deal.II/lac/dynamic_sparsity_pattern.h>
 #include <deal.II/lac/solver_cg.h>
@@ -215,6 +215,9 @@ void HelmoltzProblem<dim>::assemble_system()
         {
           const dealii::Point<2> p = fe_values.quadrature_point(q_point);
 
+          std::cout << p << ", " << i << " (" << component_i << "), value: " << fe_values.shape_value(i, q_point) << std::endl;
+          std::cout << p << ", " << i << " (" << component_i << "), grad: [" << fe_values.shape_grad(i, q_point)[0] << ", " << fe_values.shape_grad(i, q_point)[1] << "]" << std::endl;
+
           double ma_gamma_val;
           double ma_mur_val;
           if (isOutsideOfSmallSquare(p)){
@@ -229,9 +232,7 @@ void HelmoltzProblem<dim>::assemble_system()
 
           if (component_i == component_j)
           {
-            cell_matrix(i, j)
-              +=
-              fe_values.JxW(q_point) *(1 / (ma_mur_val*1.25664e-06)*(fe_values.shape_grad(j, q_point)[0] * fe_values.shape_grad(i, q_point)[0] + fe_values.shape_grad(j, q_point)[1] * fe_values.shape_grad(i, q_point)[1]));
+            cell_matrix(i, j) += fe_values.JxW(q_point) *(1 / (ma_mur_val*1.25664e-06)*(fe_values.shape_grad(j, q_point)[0] * fe_values.shape_grad(i, q_point)[0] + fe_values.shape_grad(j, q_point)[1] * fe_values.shape_grad(i, q_point)[1]));
           }
           else if (component_i == 0 && component_j == 1)
           {
@@ -274,6 +275,7 @@ void HelmoltzProblem<dim>::assemble_system()
       }
 
 
+#if INCLUDE_TOTAL_CURRENT == 1
       // Handle the special case - the last columns
       // We do this, because we want to use cell_matrix's special index '0'
       // but if we had done it before, we would be mixing with real values
@@ -301,12 +303,12 @@ void HelmoltzProblem<dim>::assemble_system()
           dof_handler.n_dofs(),
           cell_matrix(i, 0));
       }
+#endif
     }
 
 #if INCLUDE_TOTAL_CURRENT == 1
-    ///// Celkovy proud - custom handling
-    //this->process_matrix_total_current(system_matrix);
-    //this->process_rhs_total_current(system_rhs);
+    this->process_matrix_total_current(system_matrix);
+    this->process_rhs_total_current(system_rhs);
 #endif
 
     hanging_node_constraints.condense(system_matrix);
@@ -421,11 +423,24 @@ void HelmoltzProblem<dim>::solve()
     rhs_out.close();
   }
 
+  /*
   dealii::SparseDirectUMFPACK solver;
 
   solver.initialize(system_matrix);
 
   solver.vmult(solution, system_rhs);
+  */
+
+  SolverControl           solver_control(1000, 1e-8*system_rhs.l2_norm());
+  SolverCG<>              cg(solver_control);
+
+  cg.solve(system_matrix, solution, system_rhs,
+    PreconditionIdentity());
+
+  std::cout << "Solver: " << solver_control.last_step()
+    << " CG iterations."
+    << std::endl;
+
 }
 
 template <int dim>
