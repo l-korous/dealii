@@ -1,28 +1,28 @@
 /* ---------------------------------------------------------------------
- *
- * Copyright (C) 2000 - 2015 by the deal.II authors
- *
- * This file is part of the deal.II library.
- *
- * The deal.II library is free software; you can use it, redistribute
- * it, and/or modify it under the terms of the GNU Lesser General
- * Public License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- * The full text of the license can be found in the file LICENSE at
- * the top level of the deal.II distribution.
- *
- * ---------------------------------------------------------------------
+*
+* Copyright (C) 2000 - 2015 by the deal.II authors
+*
+* This file is part of the deal.II library.
+*
+* The deal.II library is free software; you can use it, redistribute
+* it, and/or modify it under the terms of the GNU Lesser General
+* Public License as published by the Free Software Foundation; either
+* version 2.1 of the License, or (at your option) any later version.
+* The full text of the license can be found in the file LICENSE at
+* the top level of the deal.II distribution.
+*
+* ---------------------------------------------------------------------
 
- *
- * Author: Wolfgang Bangerth, University of Heidelberg, 2000
- */
+*
+* Author: Wolfgang Bangerth, University of Heidelberg, 2000
+*/
 
 
-const bool PRINT_ALGEBRA = true;
+const bool PRINT_ALGEBRA = false;
 // The following means literaly "1 Amper"
 const double TOTAL_CURRENT = 1.;
 // Init ref
-const unsigned int INIT_REF_NUM = 1;
+const unsigned int INIT_REF_NUM = 6;
 const double M_PI = 3.141592654;
 #define INCLUDE_TOTAL_CURRENT 0
 
@@ -35,7 +35,7 @@ const double M_PI = 3.141592654;
 #include <deal.II/base/logstream.h>
 #include <deal.II/lac/vector.h>
 #include <deal.II/lac/full_matrix.h>
-//#include <deal.II/lac/sparse_direct.h>
+#include <deal.II/lac/sparse_direct.h>
 #include <deal.II/lac/sparse_matrix.h>
 #include <deal.II/lac/dynamic_sparsity_pattern.h>
 #include <deal.II/lac/solver_cg.h>
@@ -64,15 +64,15 @@ using namespace dealii;
 
 bool isOutsideOfSmallSquare(dealii::Point<2> point)
 {
-  return false;// (std::abs(point(0)) >= 0.05 || std::abs(point(1)) >= 0.05);
+  return (std::abs(point(0)) >= 0.05 || std::abs(point(1)) >= 0.05);
 }
 
 double getAreaOfTotalCurrent()
 {
-  return 0.1*0.1;
+  return 0.05*0.05;
 }
 
-double frequency = 50.;
+double frequency = 50;
 
 //pro oblast vzduchu :
 double ma_gamma_val_outside = 0.;
@@ -84,13 +84,12 @@ double ma_mur_val_inside = 1.;
 
 //v prvni iteraci buzene externi proudovou hustotou(med)
 #if INCLUDE_TOTAL_CURRENT == 0
-double ma_Jer_val = 1.e6;
+double ma_Jer_val = 337.97;
+double ma_Jei_val = 2511.17;
 #else
 double ma_Jer_val = 0.;
-#endif
-
 double ma_Jei_val = 0.;
-
+#endif
 
 template <int dim>
 class HelmoltzProblem
@@ -119,14 +118,10 @@ private:
   Vector<double>       solution;
   Vector<double>       system_rhs;
 
-  double J_induced_real;
-  double J_induced_imag;
-
   void process_matrix_total_current(SparseMatrix<double>& system_matrix);
   void process_rhs_total_current(Vector<double>& system_rhs);
 };
 
-#if INCLUDE_TOTAL_CURRENT == 0
 template <int dim>
 HelmoltzProblem<dim>::HelmoltzProblem()
   :
@@ -134,15 +129,6 @@ HelmoltzProblem<dim>::HelmoltzProblem()
   fe(FE_Q<dim>(1), dim)
 {
 }
-#else
-template <int dim>
-HelmoltzProblem<dim>::HelmoltzProblem()
-  :
-  dof_handler(triangulation),
-  fe(FE_Q<dim>(1), dim)
-{
-}
-#endif
 
 template <int dim>
 HelmoltzProblem<dim>::~HelmoltzProblem()
@@ -199,12 +185,14 @@ void HelmoltzProblem<dim>::assemble_system()
 
     fe_values.reinit(cell);
 
-    cell->get_dof_indices(local_dof_indices);
     for (unsigned int i = 0; i < dofs_per_cell; ++i)
     {
       const unsigned int
         component_i = fe.system_to_component_index(i).first;
-      
+
+      if (component_i >= dim)
+        continue;
+
       for (unsigned int j = 0; j < dofs_per_cell; ++j)
       {
         const unsigned int
@@ -215,12 +203,10 @@ void HelmoltzProblem<dim>::assemble_system()
         {
           const dealii::Point<2> p = fe_values.quadrature_point(q_point);
 
-          std::cout << p << ", " << i << " (" << component_i << "), value: " << fe_values.shape_value(i, q_point) << std::endl;
-          std::cout << p << ", " << i << " (" << component_i << "), grad: [" << fe_values.shape_grad(i, q_point)[0] << ", " << fe_values.shape_grad(i, q_point)[1] << "]" << std::endl;
-
           double ma_gamma_val;
           double ma_mur_val;
-          if (isOutsideOfSmallSquare(p)){
+          if (isOutsideOfSmallSquare(p))
+          {
             ma_gamma_val = ma_gamma_val_outside;
             ma_mur_val = ma_mur_val_outside;
           }
@@ -230,22 +216,23 @@ void HelmoltzProblem<dim>::assemble_system()
             ma_mur_val = ma_mur_val_inside;
           }
 
-          if (component_i == component_j)
+          if (component_i == component_j))
           {
-            cell_matrix(i, j) += fe_values.JxW(q_point) *(1 / (ma_mur_val*1.25664e-06)*(fe_values.shape_grad(j, q_point)[0] * fe_values.shape_grad(i, q_point)[0] + fe_values.shape_grad(j, q_point)[1] * fe_values.shape_grad(i, q_point)[1]));
+            cell_matrix(i, j) += fe_values.JxW(q_point) *(1. / (ma_mur_val*1.25664e-06)*(fe_values.shape_grad(j, q_point)[0] * fe_values.shape_grad(i, q_point)[0] + fe_values.shape_grad(j, q_point)[1] * fe_values.shape_grad(i, q_point)[1]));
           }
           else if (component_i == 0 && component_j == 1)
           {
-            cell_matrix(i, j) += fe_values.JxW(q_point) *(-2 * M_PI*frequency*ma_gamma_val*fe_values.shape_value(j, q_point)*fe_values.shape_value(i, q_point));
+            cell_matrix(i, j) += fe_values.JxW(q_point) *(-2. * M_PI*frequency*ma_gamma_val*fe_values.shape_value(j, q_point)*fe_values.shape_value(i, q_point));
           }
           else if (component_i == 1 && component_j == 0)
           {
-            cell_matrix(i, j) += fe_values.JxW(q_point) *(2 * M_PI*frequency*ma_gamma_val*fe_values.shape_value(j, q_point)*fe_values.shape_value(i, q_point));
+            cell_matrix(i, j) += fe_values.JxW(q_point) *(2. * M_PI*frequency*ma_gamma_val*fe_values.shape_value(j, q_point)*fe_values.shape_value(i, q_point));
           }
         }
       }
     }
 
+#if INCLUDE_TOTAL_CURRENT == 0
     for (unsigned int i = 0; i < dofs_per_cell; ++i)
     {
       const unsigned int
@@ -253,121 +240,96 @@ void HelmoltzProblem<dim>::assemble_system()
 
       for (unsigned int q_point = 0; q_point < n_q_points; ++q_point)
       {
-        if (component_i == 0)
+        const dealii::Point<2> p = fe_values.quadrature_point(q_point);
+        if (!isOutsideOfSmallSquare(p))
         {
-          cell_rhs(i) += fe_values.JxW(q_point) * ma_Jer_val*fe_values.shape_value(i, q_point);
-        }
-        else if (component_i == 1)
-        {
-          cell_rhs(i) += fe_values.JxW(q_point) * ma_Jei_val*fe_values.shape_value(i, q_point);
-        }
-      }
-    }
-
-      for (unsigned int i = 0; i < dofs_per_cell; ++i)
-      {
-        for (unsigned int j = 0; j < dofs_per_cell; ++j)
-          system_matrix.add(local_dof_indices[i],
-          local_dof_indices[j],
-          cell_matrix(i, j));
-
-        system_rhs(local_dof_indices[i]) += cell_rhs(i);
-      }
-
-
-#if INCLUDE_TOTAL_CURRENT == 1
-      // Handle the special case - the last columns
-      // We do this, because we want to use cell_matrix's special index '0'
-      // but if we had done it before, we would be mixing with real values
-      cell_matrix = 0;
-      for (unsigned int i = 0; i < dofs_per_cell; ++i)
-      {
-        const unsigned int
-          component_i = fe.system_to_component_index(i).first;
-
-        for (unsigned int q_point = 0; q_point < n_q_points; ++q_point)
-        {
-          const dealii::Point<2> p = fe_values.quadrature_point(q_point);
-          if (!isOutsideOfSmallSquare(p))
+          if (component_i == 0)
           {
-            if (component_i == 0)
-            {
-              cell_matrix(i, 0) -= fe_values.JxW(q_point) * fe_values.shape_value(i, q_point);
-            }
+            cell_rhs(i) += fe_values.JxW(q_point) * ma_Jer_val*fe_values.shape_value(i, q_point);
+          }
+          else if (component_i == 1)
+          {
+            cell_rhs(i) += fe_values.JxW(q_point) * ma_Jei_val*fe_values.shape_value(i, q_point);
           }
         }
       }
-      for (unsigned int i = 0; i < dofs_per_cell; ++i)
-      {
-          system_matrix.add(local_dof_indices[i],
-          dof_handler.n_dofs(),
-          cell_matrix(i, 0));
-      }
-#endif
     }
-
-#if INCLUDE_TOTAL_CURRENT == 1
-    this->process_matrix_total_current(system_matrix);
-    this->process_rhs_total_current(system_rhs);
 #endif
 
-    hanging_node_constraints.condense(system_matrix);
-    hanging_node_constraints.condense(system_rhs);
+    cell->get_dof_indices(local_dof_indices);
+    for (unsigned int i = 0; i < dofs_per_cell; ++i)
+    {
+      for (unsigned int j = 0; j < dofs_per_cell; ++j)
+        system_matrix.add(local_dof_indices[i],
+        local_dof_indices[j],
+        cell_matrix(i, j));
 
-    std::map<types::global_dof_index, double> boundary_values;
-    VectorTools::interpolate_boundary_values(dof_handler,
-      0,
-      ZeroFunction<dim>(dim),
-      boundary_values);
-    MatrixTools::apply_boundary_values(boundary_values,
-      system_matrix,
-      solution,
-      system_rhs);
+      system_rhs(local_dof_indices[i]) += cell_rhs(i);
+    }
   }
 
-  template <int dim>
-  void HelmoltzProblem<dim>::process_matrix_total_current(SparseMatrix<double>& system_matrix)
+#if INCLUDE_TOTAL_CURRENT == 1
+  ///// Celkovy proud - custom handling
+  this->process_matrix_total_current(system_matrix);
+  this->process_rhs_total_current(system_rhs);
+#endif
+
+  hanging_node_constraints.condense(system_matrix);
+  hanging_node_constraints.condense(system_rhs);
+
+  std::map<types::global_dof_index, double> boundary_values;
+  VectorTools::interpolate_boundary_values(dof_handler,
+    0,
+    ZeroFunction<dim>(dim + 2 * INCLUDE_TOTAL_CURRENT),
+    boundary_values);
+  MatrixTools::apply_boundary_values(boundary_values,
+    system_matrix,
+    solution,
+    system_rhs);
+}
+
+template <int dim>
+void HelmoltzProblem<dim>::process_matrix_total_current(SparseMatrix<double>& system_matrix)
+{
+  QGauss<dim>  quadrature_formula(2);
+
+  FEValues<dim> fe_values(fe, quadrature_formula,
+    update_values | update_gradients |
+    update_quadrature_points | update_JxW_values);
+
+  const unsigned int   dofs_per_cell = fe.dofs_per_cell;
+  const unsigned int   n_q_points = quadrature_formula.size();
+
+  FullMatrix<double>   cell_matrix(dofs_per_cell, dofs_per_cell);
+
+  std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
+
+  typename DoFHandler<dim>::active_cell_iterator cell = dof_handler.begin_active(),
+    endc = dof_handler.end();
+  for (; cell != endc; ++cell)
   {
-    QGauss<dim>  quadrature_formula(2);
+    cell_matrix = 0;
+    fe_values.reinit(cell);
+    cell->get_dof_indices(local_dof_indices);
 
-    FEValues<dim> fe_values(fe, quadrature_formula,
-      update_values | update_gradients |
-      update_quadrature_points | update_JxW_values);
-
-    const unsigned int   dofs_per_cell = fe.dofs_per_cell;
-    const unsigned int   n_q_points = quadrature_formula.size();
-
-    FullMatrix<double>   cell_matrix(dofs_per_cell, dofs_per_cell);
-
-    std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
-
-    typename DoFHandler<dim>::active_cell_iterator cell = dof_handler.begin_active(),
-      endc = dof_handler.end();
-    for (; cell != endc; ++cell)
+    for (unsigned int j = 0; j < dofs_per_cell; ++j)
     {
-      cell_matrix = 0;
-      fe_values.reinit(cell);
-      cell->get_dof_indices(local_dof_indices);
+      const unsigned int
+        component_j = fe.system_to_component_index(j).first;
 
-      for (unsigned int j = 0; j < dofs_per_cell; ++j)
+      for (unsigned int q_point = 0; q_point < n_q_points;
+        ++q_point)
       {
-        const unsigned int
-          component_j = fe.system_to_component_index(j).first;
-
-        for (unsigned int q_point = 0; q_point < n_q_points;
-          ++q_point)
+        const dealii::Point<2> p = fe_values.quadrature_point(q_point);
+        if (!isOutsideOfSmallSquare(p))
         {
-          const dealii::Point<2> p = fe_values.quadrature_point(q_point);
-          if (!isOutsideOfSmallSquare(p))
+          if (component_j == 1)
           {
-            if (component_j == 1)
-            {
-              cell_matrix(0, j) += fe_values.JxW(q_point) *(-2 * M_PI*frequency*ma_gamma_val_inside*fe_values.shape_value(j, q_point));
-            }
-            else if (component_j == 0)
-            {
-              cell_matrix(1, j) += fe_values.JxW(q_point) *(2 * M_PI*frequency*ma_gamma_val_inside*fe_values.shape_value(j, q_point));
-            }
+            cell_matrix(0, j) += fe_values.JxW(q_point) *(-2. * M_PI*frequency*ma_gamma_val_inside*fe_values.shape_value(j, q_point));
+          }
+          else if (component_j == 0)
+          {
+            cell_matrix(1, j) += fe_values.JxW(q_point) *(2. * M_PI*frequency*ma_gamma_val_inside*fe_values.shape_value(j, q_point));
           }
         }
       }
@@ -384,13 +346,41 @@ void HelmoltzProblem<dim>::assemble_system()
         cell_matrix(1, j));
     }
 
-    system_matrix.add(dof_handler.n_dofs(),
-      dof_handler.n_dofs(),
-      getAreaOfTotalCurrent());
+    // Handle the special case - the last columns
+    // We do this, because we want to use cell_matrix's special index '0'
+    // but if we had done it before, we would be mixing with real values
+    cell_matrix = 0;
+    for (unsigned int i = 0; i < dofs_per_cell; ++i)
+    {
+      const unsigned int
+        component_i = fe.system_to_component_index(i).first;
 
-    system_matrix.add(dof_handler.n_dofs() + 1,
-      dof_handler.n_dofs() + 1,
-      getAreaOfTotalCurrent());
+      for (unsigned int q_point = 0; q_point < n_q_points; ++q_point)
+      {
+        const dealii::Point<2> p = fe_values.quadrature_point(q_point);
+        if (!isOutsideOfSmallSquare(p))
+        {
+          if (component_i == 0)
+          {
+            cell_matrix(i, 0) -= fe_values.JxW(q_point) * fe_values.shape_value(i, q_point);
+          }
+        }
+      }
+    }
+    for (unsigned int i = 0; i < dofs_per_cell; ++i)
+    {
+      system_matrix.add(local_dof_indices[i],
+        dof_handler.n_dofs(),
+        cell_matrix(i, 0));
+    }
+  }
+  system_matrix.add(dof_handler.n_dofs(),
+    dof_handler.n_dofs(),
+    getAreaOfTotalCurrent());
+
+  system_matrix.add(dof_handler.n_dofs() + 1,
+    dof_handler.n_dofs() + 1,
+    getAreaOfTotalCurrent());
 }
 
 template <int dim>
@@ -423,24 +413,11 @@ void HelmoltzProblem<dim>::solve()
     rhs_out.close();
   }
 
-  /*
   dealii::SparseDirectUMFPACK solver;
 
   solver.initialize(system_matrix);
 
   solver.vmult(solution, system_rhs);
-  */
-
-  SolverControl           solver_control(1000, 1e-8*system_rhs.l2_norm());
-  SolverCG<>              cg(solver_control);
-
-  cg.solve(system_matrix, solution, system_rhs,
-    PreconditionIdentity());
-
-  std::cout << "Solver: " << solver_control.last_step()
-    << " CG iterations."
-    << std::endl;
-
 }
 
 template <int dim>
@@ -459,21 +436,43 @@ void HelmoltzProblem<dim>::output_results() const
   {
   case 1:
     solution_names.push_back("displacement");
+#if INCLUDE_TOTAL_CURRENT == 1
+    solution_names.push_back("current_density_R");
+    solution_names.push_back("current_density_I");
+#endif
     break;
   case 2:
-    solution_names.push_back("x_displacement");
-    solution_names.push_back("y_displacement");
+    solution_names.push_back("A_x");
+    solution_names.push_back("A_y");
+#if INCLUDE_TOTAL_CURRENT == 1
+    solution_names.push_back("current_density_R");
+    solution_names.push_back("current_density_I");
+#endif
     break;
   case 3:
     solution_names.push_back("x_displacement");
     solution_names.push_back("y_displacement");
     solution_names.push_back("z_displacement");
+#if INCLUDE_TOTAL_CURRENT == 1
+    solution_names.push_back("current_density_R");
+    solution_names.push_back("current_density_I");
+#endif
     break;
   default:
     Assert(false, ExcNotImplemented());
   }
 
-  data_out.add_data_vector(solution, solution_names);
+#if INCLUDE_TOTAL_CURRENT == 1
+  std::cout << "Ext_R: " << solution[dof_handler.n_dofs()] << std::endl;
+  std::cout << "Ext_I: " << solution[dof_handler.n_dofs() + 1] << std::endl;
+#endif
+
+  Vector<double> solution_to_display(dof_handler.n_dofs());
+  for (int i = 0; i < dof_handler.n_dofs(); i++)
+    solution_to_display[i] = solution[i];
+
+  data_out.add_data_vector(solution_to_display, solution_names);
+
   data_out.build_patches();
   data_out.write_vtk(output);
 }
