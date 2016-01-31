@@ -22,9 +22,9 @@ const bool PRINT_ALGEBRA = true;
 // The following means literaly "1 Amper"
 const double TOTAL_CURRENT = 1.;
 // Init ref
-const unsigned int INIT_REF_NUM = 1;
+const unsigned int INIT_REF_NUM = 2;
 const double M_PI = 3.141592654;
-#define INCLUDE_TOTAL_CURRENT 0
+#define INCLUDE_TOTAL_CURRENT 1
 
 // @sect3{Include files}
 
@@ -35,7 +35,7 @@ const double M_PI = 3.141592654;
 #include <deal.II/base/logstream.h>
 #include <deal.II/lac/vector.h>
 #include <deal.II/lac/full_matrix.h>
-//#include <deal.II/lac/sparse_direct.h>
+#include <deal.II/lac/sparse_direct.h>
 #include <deal.II/lac/sparse_matrix.h>
 #include <deal.II/lac/dynamic_sparsity_pattern.h>
 #include <deal.II/lac/solver_cg.h>
@@ -64,12 +64,12 @@ using namespace dealii;
 
 bool isOutsideOfSmallSquare(dealii::Point<2> point)
 {
-  return false;// (std::abs(point(0)) >= 0.05 || std::abs(point(1)) >= 0.05);
+  return (std::abs(point(0)) >= 0.05 || std::abs(point(1)) >= 0.05);
 }
 
 double getAreaOfTotalCurrent()
 {
-  return 0.1*0.1;
+  return 0.05*0.05;
 }
 
 double frequency = 50.;
@@ -126,7 +126,6 @@ private:
   void process_rhs_total_current(Vector<double>& system_rhs);
 };
 
-#if INCLUDE_TOTAL_CURRENT == 0
 template <int dim>
 HelmoltzProblem<dim>::HelmoltzProblem()
   :
@@ -134,16 +133,6 @@ HelmoltzProblem<dim>::HelmoltzProblem()
   fe(FE_Q<dim>(1), dim)
 {
 }
-#else
-template <int dim>
-HelmoltzProblem<dim>::HelmoltzProblem()
-  :
-  dof_handler(triangulation),
-  fe(FE_Q<dim>(1), dim)
-{
-}
-#endif
-
 template <int dim>
 HelmoltzProblem<dim>::~HelmoltzProblem()
 {
@@ -215,8 +204,8 @@ void HelmoltzProblem<dim>::assemble_system()
         {
           const dealii::Point<2> p = fe_values.quadrature_point(q_point);
 
-          std::cout << p << ", " << i << " (" << component_i << "), value: " << fe_values.shape_value(i, q_point) << std::endl;
-          std::cout << p << ", " << i << " (" << component_i << "), grad: [" << fe_values.shape_grad(i, q_point)[0] << ", " << fe_values.shape_grad(i, q_point)[1] << "]" << std::endl;
+          //std::cout << p << ", " << i << " (" << component_i << "), value: " << fe_values.shape_value(i, q_point) << std::endl;
+          //std::cout << p << ", " << i << " (" << component_i << "), grad: [" << fe_values.shape_grad(i, q_point)[0] << ", " << fe_values.shape_grad(i, q_point)[1] << "]" << std::endl;
 
           double ma_gamma_val;
           double ma_mur_val;
@@ -232,15 +221,15 @@ void HelmoltzProblem<dim>::assemble_system()
 
           if (component_i == component_j)
           {
-            cell_matrix(i, j) += fe_values.JxW(q_point) *(1 / (ma_mur_val*1.25664e-06)*(fe_values.shape_grad(j, q_point)[0] * fe_values.shape_grad(i, q_point)[0] + fe_values.shape_grad(j, q_point)[1] * fe_values.shape_grad(i, q_point)[1]));
+            cell_matrix(i, j) += fe_values.JxW(q_point) *(1. / (ma_mur_val*1.25664e-06)*(fe_values.shape_grad(j, q_point)[0] * fe_values.shape_grad(i, q_point)[0] + fe_values.shape_grad(j, q_point)[1] * fe_values.shape_grad(i, q_point)[1]));
           }
           else if (component_i == 0 && component_j == 1)
           {
-            cell_matrix(i, j) += fe_values.JxW(q_point) *(-2 * M_PI*frequency*ma_gamma_val*fe_values.shape_value(j, q_point)*fe_values.shape_value(i, q_point));
+            cell_matrix(i, j) += fe_values.JxW(q_point) *(-2. * M_PI*frequency*ma_gamma_val*fe_values.shape_value(j, q_point)*fe_values.shape_value(i, q_point));
           }
           else if (component_i == 1 && component_j == 0)
           {
-            cell_matrix(i, j) += fe_values.JxW(q_point) *(2 * M_PI*frequency*ma_gamma_val*fe_values.shape_value(j, q_point)*fe_values.shape_value(i, q_point));
+            cell_matrix(i, j) += fe_values.JxW(q_point) *(2. * M_PI*frequency*ma_gamma_val*fe_values.shape_value(j, q_point)*fe_values.shape_value(i, q_point));
           }
         }
       }
@@ -362,11 +351,11 @@ void HelmoltzProblem<dim>::assemble_system()
           {
             if (component_j == 1)
             {
-              cell_matrix(0, j) += fe_values.JxW(q_point) *(-2 * M_PI*frequency*ma_gamma_val_inside*fe_values.shape_value(j, q_point));
+              cell_matrix(0, j) += fe_values.JxW(q_point) *(-2. * M_PI*frequency*ma_gamma_val_inside*fe_values.shape_value(j, q_point));
             }
             else if (component_j == 0)
             {
-              cell_matrix(1, j) += fe_values.JxW(q_point) *(2 * M_PI*frequency*ma_gamma_val_inside*fe_values.shape_value(j, q_point));
+              cell_matrix(1, j) += fe_values.JxW(q_point) *(2. * M_PI*frequency*ma_gamma_val_inside*fe_values.shape_value(j, q_point));
             }
           }
         }
@@ -423,14 +412,14 @@ void HelmoltzProblem<dim>::solve()
     rhs_out.close();
   }
 
-  /*
   dealii::SparseDirectUMFPACK solver;
 
   solver.initialize(system_matrix);
 
   solver.vmult(solution, system_rhs);
-  */
 
+
+  /*
   SolverControl           solver_control(1000, 1e-8*system_rhs.l2_norm());
   SolverCG<>              cg(solver_control);
 
@@ -440,6 +429,7 @@ void HelmoltzProblem<dim>::solve()
   std::cout << "Solver: " << solver_control.last_step()
     << " CG iterations."
     << std::endl;
+  */
 
 }
 
@@ -458,22 +448,30 @@ void HelmoltzProblem<dim>::output_results() const
   switch (dim)
   {
   case 1:
-    solution_names.push_back("displacement");
+    solution_names.push_back("A_r");
     break;
   case 2:
-    solution_names.push_back("x_displacement");
-    solution_names.push_back("y_displacement");
+    solution_names.push_back("A_r");
+    solution_names.push_back("A_i");
     break;
   case 3:
     solution_names.push_back("x_displacement");
-    solution_names.push_back("y_displacement");
+    solution_names.push_back("A_i");
     solution_names.push_back("z_displacement");
     break;
   default:
     Assert(false, ExcNotImplemented());
   }
 
-  data_out.add_data_vector(solution, solution_names);
+  Vector<double> solution_to_display(dof_handler.n_dofs());
+  for(int i = 0; i < dof_handler.n_dofs(); i++)
+      solution_to_display[i] = solution[i];
+
+  data_out.add_data_vector(solution_to_display, solution_names);
+
+  std::cout << "Ext_R: " << solution[dof_handler.n_dofs()] << std::endl;
+  std::cout << "Ext_I: " << solution[dof_handler.n_dofs()+1] << std::endl;
+
   data_out.build_patches();
   data_out.write_vtk(output);
 }
