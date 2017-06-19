@@ -24,6 +24,7 @@
 #  include <deal.II/base/subscriptor.h>
 #  include <deal.II/base/index_set.h>
 #  include <deal.II/lac/exceptions.h>
+#  include <deal.II/lac/trilinos_sparse_matrix.h>
 
 #  include <vector>
 #  include <cmath>
@@ -52,6 +53,7 @@ class DynamicSparsityPattern;
 namespace TrilinosWrappers
 {
   // forward declarations
+  class SparseMatrix;
   class SparsityPattern;
 
   namespace SparsityPatternIterators
@@ -1164,7 +1166,7 @@ namespace TrilinosWrappers
      */
     std_cxx11::shared_ptr<Epetra_CrsGraph> nonlocal_graph;
 
-    friend class SparseMatrix;
+    friend class TrilinosWrappers::SparseMatrix;
     friend class SparsityPatternIterators::Accessor;
     friend class SparsityPatternIterators::Iterator;
   };

@@ -51,6 +51,10 @@ for (dof_handler : DOFHANDLER_TEMPLATES; deal_II_dimension : DIMENSIONS; deal_II
         const TriaIterator<DoFCellAccessor<dof_handler<deal_II_dimension,deal_II_space_dimension>, lda> >&, unsigned int);
     template void FESubfaceValues<deal_II_dimension,deal_II_space_dimension>::reinit(
         const TriaIterator<DoFCellAccessor<dof_handler<deal_II_dimension,deal_II_space_dimension>, lda> >&, unsigned int, unsigned int);
+    /* jfk taylor */
+    template void FEValues<deal_II_dimension,deal_II_space_dimension>::reinit(
+    	const TriaIterator<DoFCellAccessor<dof_handler<deal_II_dimension,deal_II_space_dimension>, lda> >&, const std::vector< dealii::Point<deal_II_space_dimension> >&);
+    /* jfk taylor end */
 #endif
 }
 

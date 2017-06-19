@@ -43,7 +43,9 @@ FIND_PACKAGE(TRILINOS_CONFIG
   HINTS
     ${TRILINOS_DIR}/lib/cmake/Trilinos
     ${TRILINOS_DIR}
+    ${TRILINOS_DIR}/lib
   PATH_SUFFIXES
+	lib
     lib64/cmake/Trilinos
     lib/cmake/Trilinos
     lib${LIB_SUFFIX}/cmake/Trilinos

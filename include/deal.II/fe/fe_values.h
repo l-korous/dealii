@@ -2793,14 +2793,7 @@ public:
             const Quadrature<dim>             &quadrature,
             const UpdateFlags                  update_flags);
 
-  /**
-   * Reinitialize the gradients, Jacobi determinants, etc for the given cell
-   * of type "iterator into a DoFHandler object", and the finite element
-   * associated with this object. It is assumed that the finite element used
-   * by the given cell is also the one used by this FEValues object.
-   */
-  template <template <int, int> class DoFHandlerType, bool level_dof_access>
-  void reinit (const TriaIterator<DoFCellAccessor<DoFHandlerType<dim,spacedim>,level_dof_access> > &cell);
+
 
   /**
    * Reinitialize the gradients, Jacobi determinants, etc for the given cell
@@ -2816,6 +2809,50 @@ public:
    * type objects.
    */
   void reinit (const typename Triangulation<dim,spacedim>::cell_iterator &cell);
+
+  /**
+     * Reinitialize the gradients, Jacobi determinants, etc for the given cell
+     * of type "iterator into a DoFHandler object", and the finite element
+     * associated with this object. It is assumed that the finite element used
+     * by the given cell is also the one used by this FEValues object.
+     */
+    template <template <int, int> class DoFHandlerType, bool level_dof_access>
+    void reinit (const TriaIterator<DoFCellAccessor<DoFHandlerType<dim,spacedim>,level_dof_access> > &cell);
+
+  //JFK taylor - maybe remove original lines (2802-2818) when run
+
+  /* Computes shape functions, gradients, etc. at the specified
+   *  @p points. We do not compute quadrature points, jacobians, normals
+   *  etc. which depend on the cell mapping. This will be used only
+   *  while computing the WENO limiter.
+   */
+  void reinit
+     (
+     const typename Triangulation<dim,spacedim>::cell_iterator &cell,
+     const std::vector< Point<spacedim> >& points //taylor
+     );
+
+
+
+
+    /* Computes shape functions, gradients, etc. at the specified
+     *  @p points. We do not compute quadrature points, jacobians, normals
+     *  etc. which depend on the cell mapping. This will be used only
+     *  while computing the WENO limiter.
+     */
+  template <template <int, int> class DoFHandlerType, bool level_dof_access>
+    void reinit
+       (
+       const TriaIterator<DoFCellAccessor<DoFHandlerType<dim,spacedim>,level_dof_access> > &cell,
+       const std::vector< Point<spacedim> >& points //taylor
+       );
+
+
+  //JFK taylor end
+
+
+
+
 
   /**
    * Return a reference to the copy of the quadrature formula stored by this
@@ -3190,6 +3227,8 @@ private:
   void do_reinit (const unsigned int face_no,
                   const unsigned int subface_no);
 };
+
+
 
 
 #ifndef DOXYGEN

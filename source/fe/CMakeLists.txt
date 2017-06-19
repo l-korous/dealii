@@ -26,6 +26,7 @@ SET(_src
   fe_dgp.cc
   fe_dgp_monomial.cc
   fe_dgp_nonparametric.cc
+  fe_dgt.cc
   fe_dgq.cc
   fe_dg_vector.cc
   fe_face.cc
@@ -71,6 +72,7 @@ SET(_inst
   fe_dgp.inst.in
   fe_dgp_monomial.inst.in
   fe_dgp_nonparametric.inst.in
+  fe_dgt.inst.in
   fe_dgq.inst.in
   fe_dg_vector.inst.in
   fe_face.inst.in

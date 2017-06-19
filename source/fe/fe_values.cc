@@ -3738,7 +3738,6 @@ void FEValues<dim,spacedim>::reinit (const typename Triangulation<dim,spacedim>:
 }
 
 
-
 template <int dim, int spacedim>
 template <template <int, int> class DoFHandlerType, bool lda>
 void
@@ -3769,6 +3768,112 @@ FEValues<dim,spacedim>::reinit
   // the real work.
   do_reinit ();
 }
+
+
+//jfk taylor++++++++++++++++++++++++++++++++++
+
+template <int dim, int spacedim>
+void FEValues<dim,spacedim>::reinit
+(const typename Triangulation<dim,spacedim>::cell_iterator &cell,
+ const std::vector< Point<spacedim> >& points) //taylor
+{
+   // no FE in this cell, so no assertion
+   // necessary here
+   this->maybe_invalidate_previous_present_cell (cell);
+   this->check_cell_similarity(cell);
+   
+   // set new cell. auto_ptr will take
+   // care that old object gets
+   // destroyed and also that this
+   // object gets destroyed in the
+   // destruction of this class
+   reset_pointer_in_place_if_possible<typename FEValuesBase<dim,spacedim>::TriaCellIterator>
+     (this->present_cell, cell); //8.5
+
+   // this was the part of the work
+   // that is dependent on the actual
+   // data type of the iterator. now
+   // pass on to the function doing
+   // the real work.
+   // We dont need to compute the quadrature points or mapping.
+   // We directly compute the shape functions, gradients, etc.
+   // at the specified points.
+
+  Assert (this->mapping_output.quadrature_points.size() == points.size(), //jfk tohle nefunguje a melo by
+           ExcDimensionMismatch(this->mapping_output.quadrature_points.size(), points.size()));
+   for(unsigned int q=0; q<points.size(); ++q)
+      this->mapping_output.quadrature_points[q] = points[q];
+   
+   this->get_fe().fill_fe_values(*this->present_cell,
+                                 this->cell_similarity,
+                                 this->quadrature,
+                                 this->get_mapping(),
+                                 *this->mapping_data,
+                                 this->mapping_output,
+                                 *this->fe_data,
+                                 this->finite_element_output);
+   
+
+} //do reinit?
+
+
+template <int dim, int spacedim>
+template <template <int, int> class DoFHandlerType, bool lda>
+void
+FEValues<dim,spacedim>::reinit 
+(const TriaIterator<DoFCellAccessor<DoFHandlerType<dim,spacedim>, lda> > &cell,
+ const std::vector< Point<spacedim> >& points) //taylor
+{
+  // assert that the finite elements
+  // passed to the constructor and
+  // used by the DoFHandler used by
+  // this cell, are the same
+
+  Assert (static_cast<const FiniteElementData<dim>&>(*this->fe) ==
+          static_cast<const FiniteElementData<dim>&>(cell->get_fe()),
+          (typename FEValuesBase<dim,spacedim>::ExcFEDontMatch()));
+
+  this->maybe_invalidate_previous_present_cell (cell);
+  this->check_cell_similarity(cell);
+
+  reset_pointer_in_place_if_possible<typename FEValuesBase<dim,spacedim>::template
+  CellIterator<TriaIterator<DoFCellAccessor<DoFHandlerType<dim,spacedim>,
+                                            lda> > > >
+  (this->present_cell, cell);
+
+  // this was the part of the work
+  // that is dependent on the actual
+  // data type of the iterator. now
+  // pass on to the function doing
+  // the real work.
+  
+   // We dont need to compute the quadrature points or mapping.
+   // We directly compute the shape functions, gradients, etc.
+   // at the specified points.
+   
+  /*
+   Assert (this->quadrature_points.size() == points.size(), //jfk tohle nefunguje a melo by
+           ExcDimensionMismatch(this->quadrature_points.size(), points.size()));
+   for(unsigned int q=0; q<points.size(); ++q)
+      this->quadrature_points[q] = points[q];
+   */
+   this->get_fe().fill_fe_values(*this->present_cell,
+                                 this->cell_similarity,
+                                 this->quadrature,
+                                 this->get_mapping(),
+                                 *this->mapping_data,
+                                 this->mapping_output,
+                                 *this->fe_data,
+                                 this->finite_element_output);
+   
+
+}
+
+//jfk taylor end
+
+
+
+
 
 
 
