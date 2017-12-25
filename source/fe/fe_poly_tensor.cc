@@ -336,8 +336,7 @@ fill_fe_values
 
   for (unsigned int i=0; i<this->dofs_per_cell; ++i)
     {
-      const unsigned int first = output_data.shape_function_to_row_table[i * this->n_components() +
-                                 this->get_nonzero_components(i).first_selected_component()];
+      const unsigned int first = output_data.shape_function_to_row_table[i * this->n_components() + this->get_nonzero_components(i).first_selected_component()];
 
       // update the shape function values as necessary
       //
