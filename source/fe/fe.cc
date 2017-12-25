@@ -113,7 +113,7 @@ FiniteElement (const FiniteElementData<dim> &fe_data,
   // initialize some tables in the default way, i.e. if there is only one
   // (vector-)component; if the element is not primitive, leave these tables
   // empty.
-  if (this->is_primitive())
+  //if (this->is_primitive())
     {
       system_to_component_table.resize(this->dofs_per_cell);
       face_system_to_component_table.resize(this->dofs_per_face);
