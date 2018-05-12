@@ -12427,7 +12427,6 @@ namespace
    const bool allow_anisotropic_smoothing)
   {
     Assert (cell->has_children() == false, ExcInternalError());
-    Assert (cell->refine_flag_set() == false, ExcInternalError());
 
 
     // now we provide two algorithms. the first one is the standard

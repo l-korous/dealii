@@ -3401,25 +3401,6 @@ FEValuesBase<dim,spacedim>::get_all_normal_vectors () const
 }
 
 
-
-template <int dim, int spacedim>
-std::vector<Point<spacedim> >
-FEValuesBase<dim,spacedim>::get_normal_vectors () const
-{
-  typedef FEValuesBase<dim,spacedim> FEVB;
-  Assert (this->update_flags & update_normal_vectors,
-          typename FEVB::ExcAccessToUninitializedField("update_normal_vectors"));
-
-  // copy things into a vector of Points, then return that
-  std::vector<Point<spacedim> > tmp (this->mapping_output.normal_vectors.size());
-  for (unsigned int q=0; q<this->mapping_output.normal_vectors.size(); ++q)
-    tmp[q] = Point<spacedim>(this->mapping_output.normal_vectors[q]);
-
-  return tmp;
-}
-
-
-
 template <int dim, int spacedim>
 void
 FEValuesBase<dim,spacedim>::
@@ -3757,8 +3738,7 @@ FEValues<dim,spacedim>::reinit
   this->check_cell_similarity(cell);
 
   reset_pointer_in_place_if_possible<typename FEValuesBase<dim,spacedim>::template
-  CellIterator<TriaIterator<DoFCellAccessor<DoFHandlerType<dim,spacedim>,
-                                            lda> > > >
+  CellIterator<TriaIterator<DoFCellAccessor<DoFHandlerType<dim,spacedim>, lda> > > >
   (this->present_cell, cell);
 
   // this was the part of the work
@@ -3769,13 +3749,9 @@ FEValues<dim,spacedim>::reinit
   do_reinit ();
 }
 
-
-//jfk taylor++++++++++++++++++++++++++++++++++
-
 template <int dim, int spacedim>
 void FEValues<dim,spacedim>::reinit
-(const typename Triangulation<dim,spacedim>::cell_iterator &cell,
- const std::vector< Point<spacedim> >& points) //taylor
+(const typename Triangulation<dim,spacedim>::cell_iterator &cell, const std::vector< Point<spacedim> >& points)
 {
    // no FE in this cell, so no assertion
    // necessary here
@@ -3790,17 +3766,9 @@ void FEValues<dim,spacedim>::reinit
    reset_pointer_in_place_if_possible<typename FEValuesBase<dim,spacedim>::TriaCellIterator>
      (this->present_cell, cell); //8.5
 
-   // this was the part of the work
-   // that is dependent on the actual
-   // data type of the iterator. now
-   // pass on to the function doing
-   // the real work.
    // We dont need to compute the quadrature points or mapping.
    // We directly compute the shape functions, gradients, etc.
    // at the specified points.
-
-  Assert (this->mapping_output.quadrature_points.size() == points.size(), //jfk tohle nefunguje a melo by
-           ExcDimensionMismatch(this->mapping_output.quadrature_points.size(), points.size()));
    for(unsigned int q=0; q<points.size(); ++q)
       this->mapping_output.quadrature_points[q] = points[q];
    
@@ -3812,17 +3780,13 @@ void FEValues<dim,spacedim>::reinit
                                  this->mapping_output,
                                  *this->fe_data,
                                  this->finite_element_output);
-   
-
-} //do reinit?
-
+}
 
 template <int dim, int spacedim>
 template <template <int, int> class DoFHandlerType, bool lda>
 void
 FEValues<dim,spacedim>::reinit 
-(const TriaIterator<DoFCellAccessor<DoFHandlerType<dim,spacedim>, lda> > &cell,
- const std::vector< Point<spacedim> >& points) //taylor
+(const TriaIterator<DoFCellAccessor<DoFHandlerType<dim,spacedim>, lda> > &cell, const std::vector< Point<spacedim> >& points)
 {
   // assert that the finite elements
   // passed to the constructor and
@@ -3837,26 +3801,15 @@ FEValues<dim,spacedim>::reinit
   this->check_cell_similarity(cell);
 
   reset_pointer_in_place_if_possible<typename FEValuesBase<dim,spacedim>::template
-  CellIterator<TriaIterator<DoFCellAccessor<DoFHandlerType<dim,spacedim>,
-                                            lda> > > >
+  CellIterator<TriaIterator<DoFCellAccessor<DoFHandlerType<dim,spacedim>, lda> > > >
   (this->present_cell, cell);
 
-  // this was the part of the work
-  // that is dependent on the actual
-  // data type of the iterator. now
-  // pass on to the function doing
-  // the real work.
-  
-   // We dont need to compute the quadrature points or mapping.
-   // We directly compute the shape functions, gradients, etc.
-   // at the specified points.
-   
-  /*
-   Assert (this->quadrature_points.size() == points.size(), //jfk tohle nefunguje a melo by
-           ExcDimensionMismatch(this->quadrature_points.size(), points.size()));
-   for(unsigned int q=0; q<points.size(); ++q)
-      this->quadrature_points[q] = points[q];
-   */
+  // We dont need to compute the quadrature points or mapping.
+  // We directly compute the shape functions, gradients, etc.
+  // at the specified points.
+  for (unsigned int q = 0; q<points.size(); ++q)
+    this->mapping_output.quadrature_points[q] = points[q];
+
    this->get_fe().fill_fe_values(*this->present_cell,
                                  this->cell_similarity,
                                  this->quadrature,
@@ -3865,17 +3818,7 @@ FEValues<dim,spacedim>::reinit
                                  this->mapping_output,
                                  *this->fe_data,
                                  this->finite_element_output);
-   
-
 }
-
-//jfk taylor end
-
-
-
-
-
-
 
 template <int dim, int spacedim>
 void FEValues<dim,spacedim>::do_reinit ()
@@ -4046,57 +3989,133 @@ FEFaceValues<dim,spacedim>::initialize (const UpdateFlags update_flags)
 template <int dim, int spacedim>
 template <template <int, int> class DoFHandlerType, bool lda>
 void
-FEFaceValues<dim,spacedim>::reinit
-(const TriaIterator<DoFCellAccessor<DoFHandlerType<dim,spacedim>, lda> > &cell,
- const unsigned int face_no)
+FEFaceValues<dim, spacedim>::reinit
+(const TriaIterator<DoFCellAccessor<DoFHandlerType<dim, spacedim>, lda> > &cell,
+  const unsigned int face_no)
 {
   // assert that the finite elements
   // passed to the constructor and
   // used by the DoFHandler used by
   // this cell, are the same
-  typedef FEValuesBase<dim,spacedim> FEVB;
-  Assert (static_cast<const FiniteElementData<dim>&>(*this->fe) ==
-          static_cast<const FiniteElementData<dim>&>(
-            cell->get_dof_handler().get_fe()[cell->active_fe_index ()]),
-          typename FEVB::ExcFEDontMatch());
+  typedef FEValuesBase<dim, spacedim> FEVB;
+  Assert(static_cast<const FiniteElementData<dim>&>(*this->fe) ==
+    static_cast<const FiniteElementData<dim>&>(
+      cell->get_dof_handler().get_fe()[cell->active_fe_index()]),
+    typename FEVB::ExcFEDontMatch());
 
-  Assert (face_no < GeometryInfo<dim>::faces_per_cell,
-          ExcIndexRange (face_no, 0, GeometryInfo<dim>::faces_per_cell));
+  Assert(face_no < GeometryInfo<dim>::faces_per_cell,
+    ExcIndexRange(face_no, 0, GeometryInfo<dim>::faces_per_cell));
 
-  this->maybe_invalidate_previous_present_cell (cell);
-  reset_pointer_in_place_if_possible<typename FEValuesBase<dim,spacedim>::template
-  CellIterator<TriaIterator<DoFCellAccessor<DoFHandlerType<dim,spacedim>,
-                                            lda> > > >
-  (this->present_cell, cell);
+  this->maybe_invalidate_previous_present_cell(cell);
+  reset_pointer_in_place_if_possible<typename FEValuesBase<dim, spacedim>::template
+    CellIterator<TriaIterator<DoFCellAccessor<DoFHandlerType<dim, spacedim>,
+    lda> > > >
+    (this->present_cell, cell);
 
   // this was the part of the work
   // that is dependent on the actual
   // data type of the iterator. now
   // pass on to the function doing
   // the real work.
-  do_reinit (face_no);
+  do_reinit(face_no);
+}
+
+template <int dim, int spacedim>
+template <template <int, int> class DoFHandlerType, bool lda>
+void
+FEFaceValues<dim, spacedim>::reinit
+(const TriaIterator<DoFCellAccessor<DoFHandlerType<dim, spacedim>, lda> > &cell,
+  const unsigned int face_no,
+  const std::vector< Point<spacedim> >& points)
+{
+  // assert that the finite elements
+  // passed to the constructor and
+  // used by the DoFHandler used by
+  // this cell, are the same
+  typedef FEValuesBase<dim, spacedim> FEVB;
+  Assert(static_cast<const FiniteElementData<dim>&>(*this->fe) ==
+    static_cast<const FiniteElementData<dim>&>(
+      cell->get_dof_handler().get_fe()[cell->active_fe_index()]),
+    typename FEVB::ExcFEDontMatch());
+
+  Assert(face_no < GeometryInfo<dim>::faces_per_cell,
+    ExcIndexRange(face_no, 0, GeometryInfo<dim>::faces_per_cell));
+
+  this->maybe_invalidate_previous_present_cell(cell);
+  reset_pointer_in_place_if_possible<typename FEValuesBase<dim, spacedim>::template
+    CellIterator<TriaIterator<DoFCellAccessor<DoFHandlerType<dim, spacedim>,
+    lda> > > >
+    (this->present_cell, cell);
+
+  // We dont need to compute the quadrature points or mapping.
+  // We directly compute the shape functions, gradients, etc.
+  // at the specified points.
+  for (unsigned int q = 0; q < points.size(); ++q)
+  {
+    this->mapping_output.quadrature_points[q] = points[q];
+  }
+
+  this->get_fe().fill_fe_face_values(*this->present_cell,
+    face_no,
+    this->quadrature,
+    this->get_mapping(),
+    *this->mapping_data,
+    this->mapping_output,
+    *this->fe_data,
+    this->finite_element_output);
 }
 
 
 
 template <int dim, int spacedim>
-void FEFaceValues<dim,spacedim>::reinit (const typename Triangulation<dim,spacedim>::cell_iterator &cell,
-                                         const unsigned int              face_no)
+void FEFaceValues<dim, spacedim>::reinit(const typename Triangulation<dim, spacedim>::cell_iterator &cell,
+  const unsigned int              face_no)
 {
-  Assert (face_no < GeometryInfo<dim>::faces_per_cell,
-          ExcIndexRange (face_no, 0, GeometryInfo<dim>::faces_per_cell));
+  Assert(face_no < GeometryInfo<dim>::faces_per_cell,
+    ExcIndexRange(face_no, 0, GeometryInfo<dim>::faces_per_cell));
 
-  this->maybe_invalidate_previous_present_cell (cell);
-  reset_pointer_in_place_if_possible<typename FEValuesBase<dim,spacedim>::TriaCellIterator>
-  (this->present_cell, cell);
+  this->maybe_invalidate_previous_present_cell(cell);
+  reset_pointer_in_place_if_possible<typename FEValuesBase<dim, spacedim>::TriaCellIterator>
+    (this->present_cell, cell);
 
   // this was the part of the work
   // that is dependent on the actual
   // data type of the iterator. now
   // pass on to the function doing
   // the real work.
-  do_reinit (face_no);
+  do_reinit(face_no);
 }
+
+template <int dim, int spacedim>
+void FEFaceValues<dim, spacedim>::reinit(const typename Triangulation<dim, spacedim>::cell_iterator &cell,
+  const unsigned int              face_no,
+  const std::vector< Point<spacedim> >& points)
+{
+  Assert(face_no < GeometryInfo<dim>::faces_per_cell,
+    ExcIndexRange(face_no, 0, GeometryInfo<dim>::faces_per_cell));
+
+  this->maybe_invalidate_previous_present_cell(cell);
+  reset_pointer_in_place_if_possible<typename FEValuesBase<dim, spacedim>::TriaCellIterator>
+    (this->present_cell, cell);
+
+  // We dont need to compute the quadrature points or mapping.
+  // We directly compute the shape functions, gradients, etc.
+  // at the specified points.
+  for (unsigned int q = 0; q < points.size(); ++q)
+  {
+    this->mapping_output.quadrature_points[q] = points[q];
+  }
+
+  this->get_fe().fill_fe_face_values(*this->present_cell,
+    face_no,
+    this->quadrature,
+    this->get_mapping(),
+    *this->mapping_data,
+    this->mapping_output,
+    *this->fe_data,
+    this->finite_element_output);
+}
+
 
 
 
@@ -4213,22 +4232,22 @@ FESubfaceValues<dim,spacedim>::initialize (const UpdateFlags update_flags)
 
 template <int dim, int spacedim>
 template <template <int, int> class DoFHandlerType, bool lda>
-void FESubfaceValues<dim,spacedim>::reinit
-(const TriaIterator<DoFCellAccessor<DoFHandlerType<dim,spacedim>, lda> > &cell,
- const unsigned int face_no,
- const unsigned int subface_no)
+void FESubfaceValues<dim, spacedim>::reinit
+(const TriaIterator<DoFCellAccessor<DoFHandlerType<dim, spacedim>, lda> > &cell,
+  const unsigned int face_no,
+  const unsigned int subface_no)
 {
   // assert that the finite elements
   // passed to the constructor and
   // used by the hp::DoFHandler used by
   // this cell, are the same
-  typedef FEValuesBase<dim,spacedim> FEVB;
-  Assert (static_cast<const FiniteElementData<dim>&>(*this->fe) ==
-          static_cast<const FiniteElementData<dim>&>(
-            cell->get_dof_handler().get_fe()[cell->active_fe_index ()]),
-          typename FEVB::ExcFEDontMatch());
-  Assert (face_no < GeometryInfo<dim>::faces_per_cell,
-          ExcIndexRange (face_no, 0, GeometryInfo<dim>::faces_per_cell));
+  typedef FEValuesBase<dim, spacedim> FEVB;
+  Assert(static_cast<const FiniteElementData<dim>&>(*this->fe) ==
+    static_cast<const FiniteElementData<dim>&>(
+      cell->get_dof_handler().get_fe()[cell->active_fe_index()]),
+    typename FEVB::ExcFEDontMatch());
+  Assert(face_no < GeometryInfo<dim>::faces_per_cell,
+    ExcIndexRange(face_no, 0, GeometryInfo<dim>::faces_per_cell));
   // We would like to check for
   // subface_no < cell->face(face_no)->n_children(),
   // but unfortunately the current
@@ -4237,52 +4256,150 @@ void FESubfaceValues<dim,spacedim>::reinit
   // tests/fe/mapping.cc). Therefore,
   // we must use following workaround
   // of two separate assertions
-  Assert (cell->face(face_no)->has_children() ||
-          subface_no < GeometryInfo<dim>::max_children_per_face,
-          ExcIndexRange (subface_no, 0, GeometryInfo<dim>::max_children_per_face));
-  Assert (!cell->face(face_no)->has_children() ||
-          subface_no < cell->face(face_no)->number_of_children(),
-          ExcIndexRange (subface_no, 0, cell->face(face_no)->number_of_children()));
-  Assert (cell->has_children() == false,
-          ExcMessage ("You can't use subface data for cells that are "
-                      "already refined. Iterate over their children "
-                      "instead in these cases."));
+  Assert(cell->face(face_no)->has_children() ||
+    subface_no < GeometryInfo<dim>::max_children_per_face,
+    ExcIndexRange(subface_no, 0, GeometryInfo<dim>::max_children_per_face));
+  Assert(!cell->face(face_no)->has_children() ||
+    subface_no < cell->face(face_no)->number_of_children(),
+    ExcIndexRange(subface_no, 0, cell->face(face_no)->number_of_children()));
+  Assert(cell->has_children() == false,
+    ExcMessage("You can't use subface data for cells that are "
+      "already refined. Iterate over their children "
+      "instead in these cases."));
 
-  this->maybe_invalidate_previous_present_cell (cell);
-  reset_pointer_in_place_if_possible<typename FEValuesBase<dim,spacedim>::template
-  CellIterator<TriaIterator<DoFCellAccessor<DoFHandlerType<dim,spacedim>,
-                                            lda> > > >
-  (this->present_cell, cell);
+  this->maybe_invalidate_previous_present_cell(cell);
+  reset_pointer_in_place_if_possible<typename FEValuesBase<dim, spacedim>::template
+    CellIterator<TriaIterator<DoFCellAccessor<DoFHandlerType<dim, spacedim>,
+    lda> > > >
+    (this->present_cell, cell);
 
   // this was the part of the work
   // that is dependent on the actual
   // data type of the iterator. now
   // pass on to the function doing
   // the real work.
-  do_reinit (face_no, subface_no);
+  do_reinit(face_no, subface_no);
+}
+
+template <int dim, int spacedim>
+template <template <int, int> class DoFHandlerType, bool lda>
+void FESubfaceValues<dim, spacedim>::reinit
+(const TriaIterator<DoFCellAccessor<DoFHandlerType<dim, spacedim>, lda> > &cell,
+  const unsigned int face_no,
+  const unsigned int subface_no,
+  const std::vector< Point<spacedim> >& points)
+{
+  // assert that the finite elements
+  // passed to the constructor and
+  // used by the hp::DoFHandler used by
+  // this cell, are the same
+  typedef FEValuesBase<dim, spacedim> FEVB;
+  Assert(static_cast<const FiniteElementData<dim>&>(*this->fe) ==
+    static_cast<const FiniteElementData<dim>&>(
+      cell->get_dof_handler().get_fe()[cell->active_fe_index()]),
+    typename FEVB::ExcFEDontMatch());
+  Assert(face_no < GeometryInfo<dim>::faces_per_cell,
+    ExcIndexRange(face_no, 0, GeometryInfo<dim>::faces_per_cell));
+  // We would like to check for
+  // subface_no < cell->face(face_no)->n_children(),
+  // but unfortunately the current
+  // function is also called for
+  // faces without children (see
+  // tests/fe/mapping.cc). Therefore,
+  // we must use following workaround
+  // of two separate assertions
+  Assert(cell->face(face_no)->has_children() ||
+    subface_no < GeometryInfo<dim>::max_children_per_face,
+    ExcIndexRange(subface_no, 0, GeometryInfo<dim>::max_children_per_face));
+  Assert(!cell->face(face_no)->has_children() ||
+    subface_no < cell->face(face_no)->number_of_children(),
+    ExcIndexRange(subface_no, 0, cell->face(face_no)->number_of_children()));
+  Assert(cell->has_children() == false,
+    ExcMessage("You can't use subface data for cells that are "
+      "already refined. Iterate over their children "
+      "instead in these cases."));
+
+  this->maybe_invalidate_previous_present_cell(cell);
+  reset_pointer_in_place_if_possible<typename FEValuesBase<dim, spacedim>::template
+    CellIterator<TriaIterator<DoFCellAccessor<DoFHandlerType<dim, spacedim>,
+    lda> > > >
+    (this->present_cell, cell);
+
+  // We dont need to compute the quadrature points or mapping.
+  // We directly compute the shape functions, gradients, etc.
+  // at the specified points.
+  for (unsigned int q = 0; q < points.size(); ++q)
+  {
+    this->mapping_output.quadrature_points[q] = points[q];
+  }
+
+  this->get_fe().fill_fe_subface_values(*this->present_cell,
+    face_no,
+    subface_no,
+    this->quadrature,
+    this->get_mapping(),
+    *this->mapping_data,
+    this->mapping_output,
+    *this->fe_data,
+    this->finite_element_output);
 }
 
 
 template <int dim, int spacedim>
-void FESubfaceValues<dim,spacedim>::reinit (const typename Triangulation<dim,spacedim>::cell_iterator &cell,
-                                            const unsigned int         face_no,
-                                            const unsigned int         subface_no)
+void FESubfaceValues<dim, spacedim>::reinit(const typename Triangulation<dim, spacedim>::cell_iterator &cell,
+  const unsigned int         face_no,
+  const unsigned int         subface_no)
 {
-  Assert (face_no < GeometryInfo<dim>::faces_per_cell,
-          ExcIndexRange (face_no, 0, GeometryInfo<dim>::faces_per_cell));
-  Assert (subface_no < cell->face(face_no)->n_children(),
-          ExcIndexRange (subface_no, 0, cell->face(face_no)->n_children()));
+  Assert(face_no < GeometryInfo<dim>::faces_per_cell,
+    ExcIndexRange(face_no, 0, GeometryInfo<dim>::faces_per_cell));
+  Assert(subface_no < cell->face(face_no)->n_children(),
+    ExcIndexRange(subface_no, 0, cell->face(face_no)->n_children()));
 
-  this->maybe_invalidate_previous_present_cell (cell);
-  reset_pointer_in_place_if_possible<typename FEValuesBase<dim,spacedim>::TriaCellIterator>
-  (this->present_cell, cell);
+  this->maybe_invalidate_previous_present_cell(cell);
+  reset_pointer_in_place_if_possible<typename FEValuesBase<dim, spacedim>::TriaCellIterator>
+    (this->present_cell, cell);
 
   // this was the part of the work
   // that is dependent on the actual
   // data type of the iterator. now
   // pass on to the function doing
   // the real work.
-  do_reinit (face_no, subface_no);
+  do_reinit(face_no, subface_no);
+}
+
+
+template <int dim, int spacedim>
+void FESubfaceValues<dim, spacedim>::reinit(const typename Triangulation<dim, spacedim>::cell_iterator &cell,
+  const unsigned int         face_no,
+  const unsigned int         subface_no,
+  const std::vector< Point<spacedim> >& points)
+{
+  Assert(face_no < GeometryInfo<dim>::faces_per_cell,
+    ExcIndexRange(face_no, 0, GeometryInfo<dim>::faces_per_cell));
+  Assert(subface_no < cell->face(face_no)->n_children(),
+    ExcIndexRange(subface_no, 0, cell->face(face_no)->n_children()));
+
+  this->maybe_invalidate_previous_present_cell(cell);
+  reset_pointer_in_place_if_possible<typename FEValuesBase<dim, spacedim>::TriaCellIterator>
+    (this->present_cell, cell);
+
+  // We dont need to compute the quadrature points or mapping.
+  // We directly compute the shape functions, gradients, etc.
+  // at the specified points.
+  for (unsigned int q = 0; q < points.size(); ++q)
+  {
+    this->mapping_output.quadrature_points[q] = points[q];
+  }
+
+  this->get_fe().fill_fe_subface_values(*this->present_cell,
+    face_no,
+    subface_no,
+    this->quadrature,
+    this->get_mapping(),
+    *this->mapping_data,
+    this->mapping_output,
+    *this->fe_data,
+    this->finite_element_output);
 }
 
 

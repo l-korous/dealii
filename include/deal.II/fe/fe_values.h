@@ -2408,11 +2408,11 @@ public:
    *
    * @dealiiRequiresUpdateFlags{update_normal_vectors}
    *
-   * @note This function should really be named get_normal_vectors(), but this
+   * @note This function should really be named get_basic_face_info_vectors(), but this
    * function already exists with a different return type that returns a
    * vector of Point objects, rather than a vector of Tensor objects. This is
    * a historical accident, but can not be fixed in a backward compatible
-   * style. That said, the get_normal_vectors() function is now deprecated,
+   * style. That said, the get_basic_face_info_vectors() function is now deprecated,
    * will be removed in the next version, and the current function will then
    * be renamed.
    */
@@ -2428,7 +2428,7 @@ public:
    *
    * @deprecated
    */
-  std::vector<Point<spacedim> > get_normal_vectors () const DEAL_II_DEPRECATED;
+  std::vector<Point<spacedim> > get_basic_face_info_vectors () const DEAL_II_DEPRECATED;
 
   /**
    * Transform a set of vectors, one for each quadrature point. The
@@ -2811,48 +2811,32 @@ public:
   void reinit (const typename Triangulation<dim,spacedim>::cell_iterator &cell);
 
   /**
-     * Reinitialize the gradients, Jacobi determinants, etc for the given cell
-     * of type "iterator into a DoFHandler object", and the finite element
-     * associated with this object. It is assumed that the finite element used
-     * by the given cell is also the one used by this FEValues object.
-     */
-    template <template <int, int> class DoFHandlerType, bool level_dof_access>
-    void reinit (const TriaIterator<DoFCellAccessor<DoFHandlerType<dim,spacedim>,level_dof_access> > &cell);
-
-  //JFK taylor - maybe remove original lines (2802-2818) when run
+    * Reinitialize the gradients, Jacobi determinants, etc for the given cell
+    * of type "iterator into a DoFHandler object", and the finite element
+    * associated with this object. It is assumed that the finite element used
+    * by the given cell is also the one used by this FEValues object.
+    */
+  template <template <int, int> class DoFHandlerType, bool level_dof_access>
+  void reinit (const TriaIterator<DoFCellAccessor<DoFHandlerType<dim,spacedim>,level_dof_access> > &cell);
 
   /* Computes shape functions, gradients, etc. at the specified
    *  @p points. We do not compute quadrature points, jacobians, normals
    *  etc. which depend on the cell mapping. This will be used only
    *  while computing the WENO limiter.
    */
-  void reinit
-     (
+  void reinit (
      const typename Triangulation<dim,spacedim>::cell_iterator &cell,
-     const std::vector< Point<spacedim> >& points //taylor
-     );
+     const std::vector< Point<spacedim> >& points);
 
-
-
-
-    /* Computes shape functions, gradients, etc. at the specified
-     *  @p points. We do not compute quadrature points, jacobians, normals
-     *  etc. which depend on the cell mapping. This will be used only
-     *  while computing the WENO limiter.
-     */
+  /* Computes shape functions, gradients, etc. at the specified
+    *  @p points. We do not compute quadrature points, jacobians, normals
+    *  etc. which depend on the cell mapping. This will be used only
+    *  while computing the WENO limiter.
+    */
   template <template <int, int> class DoFHandlerType, bool level_dof_access>
-    void reinit
-       (
-       const TriaIterator<DoFCellAccessor<DoFHandlerType<dim,spacedim>,level_dof_access> > &cell,
-       const std::vector< Point<spacedim> >& points //taylor
-       );
-
-
-  //JFK taylor end
-
-
-
-
+  void reinit (
+      const TriaIterator<DoFCellAccessor<DoFHandlerType<dim,spacedim>,level_dof_access> > &cell,
+      const std::vector< Point<spacedim> >& points);
 
   /**
    * Return a reference to the copy of the quadrature formula stored by this
@@ -3047,8 +3031,13 @@ public:
    * number @p face_no of @p cell and the given finite element.
    */
   template <template <int, int> class DoFHandlerType, bool level_dof_access>
-  void reinit (const TriaIterator<DoFCellAccessor<DoFHandlerType<dim,spacedim>,level_dof_access> > &cell,
-               const unsigned int face_no);
+  void reinit(const TriaIterator<DoFCellAccessor<DoFHandlerType<dim, spacedim>, level_dof_access> > &cell,
+    const unsigned int face_no);
+
+  template <template <int, int> class DoFHandlerType, bool level_dof_access>
+  void reinit(const TriaIterator<DoFCellAccessor<DoFHandlerType<dim, spacedim>, level_dof_access> > &cell,
+    const unsigned int face_no,
+    const std::vector< Point<spacedim> >& points);
 
   /**
    * Reinitialize the gradients, Jacobi determinants, etc for the given face
@@ -3063,8 +3052,12 @@ public:
    * reinit variants that take iterators into DoFHandler or other DoF handler
    * type objects.
    */
-  void reinit (const typename Triangulation<dim,spacedim>::cell_iterator &cell,
-               const unsigned int                                         face_no);
+  void reinit(const typename Triangulation<dim, spacedim>::cell_iterator &cell,
+    const unsigned int                                         face_no);
+
+  void reinit(const typename Triangulation<dim, spacedim>::cell_iterator &cell,
+    const unsigned int                                         face_no,
+    const std::vector< Point<spacedim> >& points);
 
   /**
    * Return a reference to this very object.
@@ -3160,9 +3153,15 @@ public:
    * by the given cell is also the one used by this FESubfaceValues object.
    */
   template <template <int, int> class DoFHandlerType, bool level_dof_access>
-  void reinit (const TriaIterator<DoFCellAccessor<DoFHandlerType<dim,spacedim>,level_dof_access> > &cell,
-               const unsigned int face_no,
-               const unsigned int subface_no);
+  void reinit(const TriaIterator<DoFCellAccessor<DoFHandlerType<dim, spacedim>, level_dof_access> > &cell,
+    const unsigned int face_no,
+    const unsigned int subface_no);
+
+  template <template <int, int> class DoFHandlerType, bool level_dof_access>
+  void reinit(const TriaIterator<DoFCellAccessor<DoFHandlerType<dim, spacedim>, level_dof_access> > &cell,
+    const unsigned int face_no,
+    const unsigned int subface_no,
+    const std::vector< Point<spacedim> >& points);
 
   /**
    * Reinitialize the gradients, Jacobi determinants, etc for the given
@@ -3177,9 +3176,14 @@ public:
    * reinit variants that take iterators into DoFHandler or other DoF handler
    * type objects.
    */
-  void reinit (const typename Triangulation<dim,spacedim>::cell_iterator &cell,
-               const unsigned int                    face_no,
-               const unsigned int                    subface_no);
+  void reinit(const typename Triangulation<dim, spacedim>::cell_iterator &cell,
+    const unsigned int                    face_no,
+    const unsigned int                    subface_no);
+
+  void reinit(const typename Triangulation<dim, spacedim>::cell_iterator &cell,
+    const unsigned int                    face_no,
+    const unsigned int                    subface_no,
+    const std::vector< Point<spacedim> >& points);
 
   /**
    * Return a reference to this very object.

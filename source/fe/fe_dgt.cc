@@ -19,14 +19,13 @@
 #include <deal.II/dofs/dof_accessor.h>
 #include <deal.II/fe/fe.h>
 #include <deal.II/fe/mapping.h>
-#include <deal.II/fe/fe_dgt.h>
 #include <deal.II/fe/fe_values.h>
 #include <sstream>
 DEAL_II_NAMESPACE_OPEN
 
 
 template <int dim, int spacedim>
-FE_DGT<dim, spacedim>::FE_DGT(const unsigned int degree)
+FE_DG_Taylor<dim, spacedim>::FE_DG_Taylor(const unsigned int degree)
   :
   FiniteElement<dim, spacedim>(
     FiniteElementData<dim>(get_dpo_vector(degree), 1, degree,
@@ -59,23 +58,23 @@ FE_DGT<dim, spacedim>::FE_DGT(const unsigned int degree)
 
 
 template <int dim, int spacedim>
-std::string FE_DGT<dim, spacedim>::get_name() const
+std::string FE_DG_Taylor<dim, spacedim>::get_name() const
 {
   std::ostringstream namebuf;
-  namebuf << "FE_DGT<" << Utilities::dim_string(dim, spacedim) << ">(" << this->degree << ")";
+  namebuf << "FE_DG_Taylor<" << Utilities::dim_string(dim, spacedim) << ">(" << this->degree << ")";
   return namebuf.str();
 }
 
 
 template <int dim, int spacedim>
-FiniteElement<dim, spacedim> * FE_DGT<dim, spacedim>::clone() const
+FiniteElement<dim, spacedim> * FE_DG_Taylor<dim, spacedim>::clone() const
 {
-  return new FE_DGT<dim, spacedim>(*this);
+  return new FE_DG_Taylor<dim, spacedim>(*this);
 }
 
 
 template <int dim, int spacedim>
-double FE_DGT<dim, spacedim>::shape_value(const unsigned int i, const Point<dim> &p) const
+double FE_DG_Taylor<dim, spacedim>::shape_value(const unsigned int i, const Point<dim> &p) const
 {
   Assert(false, ExcNotImplemented());
   return 0;
@@ -84,7 +83,7 @@ double FE_DGT<dim, spacedim>::shape_value(const unsigned int i, const Point<dim>
 
 template <int dim, int spacedim>
 double
-FE_DGT<dim, spacedim>::shape_value(const typename Triangulation<dim, spacedim>::cell_iterator & cell, const unsigned int i, const Point<dim> &p) const
+FE_DG_Taylor<dim, spacedim>::shape_value(const typename Triangulation<dim, spacedim>::cell_iterator & cell, const unsigned int i, const Point<dim> &p) const
 
 {
   Assert(i < this->dofs_per_cell, ExcIndexRange(i, 0, this->dofs_per_cell));
@@ -97,7 +96,7 @@ FE_DGT<dim, spacedim>::shape_value(const typename Triangulation<dim, spacedim>::
 
 template <int dim, int spacedim>
 void
-FE_DGT<dim, spacedim>::shape_values(const typename Triangulation<dim, spacedim>::cell_iterator & cell, const std::vector< Point<dim> > &p, std::vector< std::vector<double> >& values) const
+FE_DG_Taylor<dim, spacedim>::shape_values(const typename Triangulation<dim, spacedim>::cell_iterator & cell, const std::vector< Point<dim> > &p, std::vector< std::vector<double> >& values) const
 {
   Assert(values.size() == this->dofs_per_cell, ExcDimensionMismatch(values.size(), this->dofs_per_cell));
   Assert(values[0].size() == p.size(), ExcDimensionMismatch(values[0].size(), p.size()));
@@ -112,7 +111,7 @@ FE_DGT<dim, spacedim>::shape_values(const typename Triangulation<dim, spacedim>:
 
 
 template <int dim, int spacedim>
-double FE_DGT<dim, spacedim>::shape_value_component(const unsigned int i, const Point<dim> &p, const unsigned int component) const
+double FE_DG_Taylor<dim, spacedim>::shape_value_component(const unsigned int i, const Point<dim> &p, const unsigned int component) const
 {
   Assert(false, ExcNotImplemented());
   return 0;
@@ -121,7 +120,7 @@ double FE_DGT<dim, spacedim>::shape_value_component(const unsigned int i, const 
 
 template <int dim, int spacedim>
 double
-FE_DGT<dim, spacedim>::shape_value_component(const typename Triangulation<dim, spacedim>::cell_iterator & cell, const unsigned int i, const Point<dim> &p, const unsigned int component) const
+FE_DG_Taylor<dim, spacedim>::shape_value_component(const typename Triangulation<dim, spacedim>::cell_iterator & cell, const unsigned int i, const Point<dim> &p, const unsigned int component) const
 {
   (void)component;
   Assert(i < this->dofs_per_cell, ExcIndexRange(i, 0, this->dofs_per_cell));
@@ -132,7 +131,7 @@ FE_DGT<dim, spacedim>::shape_value_component(const typename Triangulation<dim, s
 
 
 template <int dim, int spacedim>
-Tensor<1, dim> FE_DGT<dim, spacedim>::shape_grad(const unsigned int i, const Point<dim> &p) const
+Tensor<1, dim> FE_DG_Taylor<dim, spacedim>::shape_grad(const unsigned int i, const Point<dim> &p) const
 {
   Assert(false, ExcNotImplemented());
   return Tensor<1, dim>();
@@ -141,7 +140,7 @@ Tensor<1, dim> FE_DGT<dim, spacedim>::shape_grad(const unsigned int i, const Poi
 
 template <int dim, int spacedim>
 Tensor<1, dim>
-FE_DGT<dim, spacedim>::shape_grad(const typename Triangulation<dim, spacedim>::cell_iterator & cell, const unsigned int i, const Point<dim> &p) const
+FE_DG_Taylor<dim, spacedim>::shape_grad(const typename Triangulation<dim, spacedim>::cell_iterator & cell, const unsigned int i, const Point<dim> &p) const
 {
   Assert(i < this->dofs_per_cell, ExcIndexRange(i, 0, this->dofs_per_cell));
   const Point<dim> pp = (Point<dim>)(p - cell->center()) / cell->diameter();
@@ -151,7 +150,7 @@ FE_DGT<dim, spacedim>::shape_grad(const typename Triangulation<dim, spacedim>::c
 
 template <int dim, int spacedim>
 Tensor<1, dim>
-FE_DGT<dim, spacedim>::shape_grad_component(const unsigned int i, const Point<dim> &p, const unsigned int component) const
+FE_DG_Taylor<dim, spacedim>::shape_grad_component(const unsigned int i, const Point<dim> &p, const unsigned int component) const
 {
   Assert(false, ExcNotImplemented());
   return Tensor<1, dim>();
@@ -160,7 +159,7 @@ FE_DGT<dim, spacedim>::shape_grad_component(const unsigned int i, const Point<di
 
 template <int dim, int spacedim>
 Tensor<1, dim>
-FE_DGT<dim, spacedim>::shape_grad_component(const typename Triangulation<dim, spacedim>::cell_iterator & cell, const unsigned int i, const Point<dim> &p, const unsigned int component) const
+FE_DG_Taylor<dim, spacedim>::shape_grad_component(const typename Triangulation<dim, spacedim>::cell_iterator & cell, const unsigned int i, const Point<dim> &p, const unsigned int component) const
 {
   Assert(i < this->dofs_per_cell, ExcIndexRange(i, 0, this->dofs_per_cell));
   Assert(component == 0, ExcIndexRange(component, 0, 1));
@@ -171,7 +170,7 @@ FE_DGT<dim, spacedim>::shape_grad_component(const typename Triangulation<dim, sp
 
 template <int dim, int spacedim>
 Tensor<2, dim>
-FE_DGT<dim, spacedim>::shape_grad_grad(const unsigned int i, const Point<dim> &p) const
+FE_DG_Taylor<dim, spacedim>::shape_grad_grad(const unsigned int i, const Point<dim> &p) const
 {
   Assert(false, ExcNotImplemented());
   return Tensor<2, dim>();
@@ -180,7 +179,7 @@ FE_DGT<dim, spacedim>::shape_grad_grad(const unsigned int i, const Point<dim> &p
 
 template <int dim, int spacedim>
 Tensor<2, dim>
-FE_DGT<dim, spacedim>::shape_grad_grad(const typename Triangulation<dim, spacedim>::cell_iterator & cell, const unsigned int i, const Point<dim> &p) const
+FE_DG_Taylor<dim, spacedim>::shape_grad_grad(const typename Triangulation<dim, spacedim>::cell_iterator & cell, const unsigned int i, const Point<dim> &p) const
 {
   Assert(i < this->dofs_per_cell, ExcIndexRange(i, 0, this->dofs_per_cell));
   const Point<dim> pp = (Point<dim>)(p - cell->center()) / cell->diameter();
@@ -190,7 +189,7 @@ FE_DGT<dim, spacedim>::shape_grad_grad(const typename Triangulation<dim, spacedi
 
 template <int dim, int spacedim>
 Tensor<2, dim>
-FE_DGT<dim, spacedim>::shape_grad_grad_component(const unsigned int i, const Point<dim> &p, const unsigned int component) const
+FE_DG_Taylor<dim, spacedim>::shape_grad_grad_component(const unsigned int i, const Point<dim> &p, const unsigned int component) const
 {
   Assert(false, ExcNotImplemented());
   return Tensor<2, dim>();
@@ -199,7 +198,7 @@ FE_DGT<dim, spacedim>::shape_grad_grad_component(const unsigned int i, const Poi
 
 template <int dim, int spacedim>
 Tensor<2, dim>
-FE_DGT<dim, spacedim>::shape_grad_grad_component(const typename Triangulation<dim, spacedim>::cell_iterator & cell, const unsigned int i, const Point<dim> &p, const unsigned int component) const
+FE_DG_Taylor<dim, spacedim>::shape_grad_grad_component(const typename Triangulation<dim, spacedim>::cell_iterator & cell, const unsigned int i, const Point<dim> &p, const unsigned int component) const
 {
   Assert(i < this->dofs_per_cell, ExcIndexRange(i, 0, this->dofs_per_cell));
   Assert(component == 0, ExcIndexRange(component, 0, 1));
@@ -210,7 +209,7 @@ FE_DGT<dim, spacedim>::shape_grad_grad_component(const typename Triangulation<di
 
 template <int dim, int spacedim>
 std::vector<unsigned int>
-FE_DGT<dim, spacedim>::get_dpo_vector(const unsigned int deg)
+FE_DG_Taylor<dim, spacedim>::get_dpo_vector(const unsigned int deg)
 {
   std::vector<unsigned int> dpo(dim + 1, static_cast<unsigned int>(0));
   dpo[dim] = deg + 1;
@@ -224,7 +223,7 @@ FE_DGT<dim, spacedim>::get_dpo_vector(const unsigned int deg)
 
 
 template <int dim, int spacedim>
-UpdateFlags FE_DGT<dim, spacedim>::requires_update_flags(const UpdateFlags flags) const
+UpdateFlags FE_DG_Taylor<dim, spacedim>::requires_update_flags(const UpdateFlags flags) const
 {
   UpdateFlags out = flags;
 
@@ -237,7 +236,7 @@ UpdateFlags FE_DGT<dim, spacedim>::requires_update_flags(const UpdateFlags flags
 
 template <int dim, int spacedim>
 typename FiniteElement<dim, spacedim>::InternalDataBase *
-FE_DGT<dim, spacedim>::get_data(const UpdateFlags update_flags, const Mapping<dim, spacedim> &, const Quadrature<dim> &, dealii::internal::FEValues::FiniteElementRelatedData<dim, spacedim> &/*output_data*/) const
+FE_DG_Taylor<dim, spacedim>::get_data(const UpdateFlags update_flags, const Mapping<dim, spacedim> &, const Quadrature<dim> &, dealii::internal::FEValues::FiniteElementRelatedData<dim, spacedim> &/*output_data*/) const
 {
   typename FiniteElement<dim, spacedim>::InternalDataBase *data = new typename FiniteElement<dim, spacedim>::InternalDataBase;
   data->update_each = requires_update_flags(update_flags);
@@ -247,7 +246,7 @@ FE_DGT<dim, spacedim>::get_data(const UpdateFlags update_flags, const Mapping<di
 
 template <int dim, int spacedim>
 void
-FE_DGT<dim, spacedim>::fill_fe_values(const typename Triangulation<dim, spacedim>::cell_iterator & cell,
+FE_DG_Taylor<dim, spacedim>::fill_fe_values(const typename Triangulation<dim, spacedim>::cell_iterator & cell,
   const CellSimilarity::Similarity,
   const Quadrature<dim> &,
   const Mapping<dim, spacedim> &,
@@ -293,7 +292,7 @@ FE_DGT<dim, spacedim>::fill_fe_values(const typename Triangulation<dim, spacedim
 
 template <int dim, int spacedim>
 void
-FE_DGT<dim, spacedim>::fill_fe_face_values(const typename Triangulation<dim, spacedim>::cell_iterator & cell,
+FE_DG_Taylor<dim, spacedim>::fill_fe_face_values(const typename Triangulation<dim, spacedim>::cell_iterator & cell,
   const unsigned int,
   const Quadrature<dim - 1>                                             &,
   const Mapping<dim, spacedim> &,
@@ -302,7 +301,6 @@ FE_DGT<dim, spacedim>::fill_fe_face_values(const typename Triangulation<dim, spa
   const typename FiniteElement<dim, spacedim>::InternalDataBase        &fe_internal,
   dealii::internal::FEValues::FiniteElementRelatedData<dim, spacedim> &output_data) const
 {
-
   Assert(fe_internal.update_each & update_quadrature_points, ExcInternalError());
 
   const unsigned int n_q_points = mapping_data.quadrature_points.size();
@@ -339,7 +337,7 @@ FE_DGT<dim, spacedim>::fill_fe_face_values(const typename Triangulation<dim, spa
 
 
 template <int dim, int spacedim>
-void FE_DGT<dim, spacedim>::fill_fe_subface_values(const typename Triangulation<dim, spacedim>::cell_iterator & cell,
+void FE_DG_Taylor<dim, spacedim>::fill_fe_subface_values(const typename Triangulation<dim, spacedim>::cell_iterator & cell,
   const unsigned int,
   const unsigned int,
   const Quadrature<dim - 1>                                             &,
@@ -385,10 +383,10 @@ void FE_DGT<dim, spacedim>::fill_fe_subface_values(const typename Triangulation<
 
 
 template <int dim, int spacedim>
-void FE_DGT<dim, spacedim>::get_face_interpolation_matrix(const FiniteElement<dim, spacedim> &x_source_fe, FullMatrix<double> &interpolation_matrix) const
+void FE_DG_Taylor<dim, spacedim>::get_face_interpolation_matrix(const FiniteElement<dim, spacedim> &x_source_fe, FullMatrix<double> &interpolation_matrix) const
 {
   typedef              FiniteElement<dim, spacedim> FEE;
-  AssertThrow((x_source_fe.get_name().find("FE_DGT<") == 0) || (dynamic_cast<const FE_DGT<dim, spacedim>*>(&x_source_fe) != 0), typename FEE::ExcInterpolationNotImplemented());
+  AssertThrow((x_source_fe.get_name().find("FE_DG_Taylor<") == 0) || (dynamic_cast<const FE_DG_Taylor<dim, spacedim>*>(&x_source_fe) != 0), typename FEE::ExcInterpolationNotImplemented());
 
   Assert(interpolation_matrix.m() == 0, ExcDimensionMismatch(interpolation_matrix.m(), 0));
   Assert(interpolation_matrix.n() == 0, ExcDimensionMismatch(interpolation_matrix.n(), 0));
@@ -396,12 +394,12 @@ void FE_DGT<dim, spacedim>::get_face_interpolation_matrix(const FiniteElement<di
 
 
 template <int dim, int spacedim>
-void FE_DGT<dim, spacedim>::get_subface_interpolation_matrix(const FiniteElement<dim, spacedim> &x_source_fe,
+void FE_DG_Taylor<dim, spacedim>::get_subface_interpolation_matrix(const FiniteElement<dim, spacedim> &x_source_fe,
   const unsigned int,
   FullMatrix<double>           &interpolation_matrix) const
 {
   typedef              FiniteElement<dim, spacedim> FEE;
-  AssertThrow((x_source_fe.get_name().find("FE_DGT<") == 0) || (dynamic_cast<const FE_DGT<dim, spacedim>*>(&x_source_fe) != 0), typename FEE::ExcInterpolationNotImplemented());
+  AssertThrow((x_source_fe.get_name().find("FE_DG_Taylor<") == 0) || (dynamic_cast<const FE_DG_Taylor<dim, spacedim>*>(&x_source_fe) != 0), typename FEE::ExcInterpolationNotImplemented());
 
   Assert(interpolation_matrix.m() == 0, ExcDimensionMismatch(interpolation_matrix.m(), 0));
   Assert(interpolation_matrix.n() == 0, ExcDimensionMismatch(interpolation_matrix.n(), 0));
@@ -409,7 +407,7 @@ void FE_DGT<dim, spacedim>::get_subface_interpolation_matrix(const FiniteElement
 
 
 template <int dim, int spacedim>
-bool FE_DGT<dim, spacedim>::hp_constraints_are_implemented() const
+bool FE_DG_Taylor<dim, spacedim>::hp_constraints_are_implemented() const
 {
   return true;
 }
@@ -417,10 +415,10 @@ bool FE_DGT<dim, spacedim>::hp_constraints_are_implemented() const
 
 template <int dim, int spacedim>
 std::vector<std::pair<unsigned int, unsigned int> >
-FE_DGT<dim, spacedim>::hp_vertex_dof_identities(const FiniteElement<dim, spacedim> &fe_other) const
+FE_DG_Taylor<dim, spacedim>::hp_vertex_dof_identities(const FiniteElement<dim, spacedim> &fe_other) const
 {
   // there are no such constraints for DGPNonparametric elements at all
-  if (dynamic_cast<const FE_DGT<dim, spacedim>*>(&fe_other) != 0)
+  if (dynamic_cast<const FE_DG_Taylor<dim, spacedim>*>(&fe_other) != 0)
     return std::vector<std::pair<unsigned int, unsigned int> >();
   else
   {
@@ -432,10 +430,10 @@ FE_DGT<dim, spacedim>::hp_vertex_dof_identities(const FiniteElement<dim, spacedi
 
 template <int dim, int spacedim>
 std::vector<std::pair<unsigned int, unsigned int> >
-FE_DGT<dim, spacedim>::hp_line_dof_identities(const FiniteElement<dim, spacedim> &fe_other) const
+FE_DG_Taylor<dim, spacedim>::hp_line_dof_identities(const FiniteElement<dim, spacedim> &fe_other) const
 {
   // there are no such constraints for DGPNonparametric elements at all
-  if (dynamic_cast<const FE_DGT<dim, spacedim>*>(&fe_other) != 0)
+  if (dynamic_cast<const FE_DG_Taylor<dim, spacedim>*>(&fe_other) != 0)
     return std::vector<std::pair<unsigned int, unsigned int> >();
   else
   {
@@ -447,10 +445,10 @@ FE_DGT<dim, spacedim>::hp_line_dof_identities(const FiniteElement<dim, spacedim>
 
 template <int dim, int spacedim>
 std::vector<std::pair<unsigned int, unsigned int> >
-FE_DGT<dim, spacedim>::hp_quad_dof_identities(const FiniteElement<dim, spacedim>        &fe_other) const
+FE_DG_Taylor<dim, spacedim>::hp_quad_dof_identities(const FiniteElement<dim, spacedim>        &fe_other) const
 {
   // there are no such constraints for DGPNonparametric elements at all
-  if (dynamic_cast<const FE_DGT<dim, spacedim>*>(&fe_other) != 0)
+  if (dynamic_cast<const FE_DG_Taylor<dim, spacedim>*>(&fe_other) != 0)
     return std::vector<std::pair<unsigned int, unsigned int> >();
   else
   {
@@ -462,10 +460,10 @@ FE_DGT<dim, spacedim>::hp_quad_dof_identities(const FiniteElement<dim, spacedim>
 
 template <int dim, int spacedim>
 FiniteElementDomination::Domination
-FE_DGT<dim, spacedim>::compare_for_face_domination(const FiniteElement<dim, spacedim> &fe_other) const
+FE_DG_Taylor<dim, spacedim>::compare_for_face_domination(const FiniteElement<dim, spacedim> &fe_other) const
 {
   // check whether both are discontinuous elements, see the description of FiniteElementDomination::Domination
-  if (dynamic_cast<const FE_DGT<dim, spacedim>*>(&fe_other) != 0)
+  if (dynamic_cast<const FE_DG_Taylor<dim, spacedim>*>(&fe_other) != 0)
     return FiniteElementDomination::no_requirements;
 
   Assert(false, ExcNotImplemented());
@@ -474,14 +472,14 @@ FE_DGT<dim, spacedim>::compare_for_face_domination(const FiniteElement<dim, spac
 
 
 template <int dim, int spacedim>
-bool FE_DGT<dim, spacedim>::has_support_on_face(const unsigned int, const unsigned int) const
+bool FE_DG_Taylor<dim, spacedim>::has_support_on_face(const unsigned int, const unsigned int) const
 {
   return true;
 }
 
 
 template <int dim, int spacedim>
-std::size_t FE_DGT<dim, spacedim>::memory_consumption() const
+std::size_t FE_DG_Taylor<dim, spacedim>::memory_consumption() const
 {
   Assert(false, ExcNotImplemented());
   return 0;
@@ -489,12 +487,12 @@ std::size_t FE_DGT<dim, spacedim>::memory_consumption() const
 
 
 template <int dim, int spacedim>
-unsigned int FE_DGT<dim, spacedim>::get_degree() const
+unsigned int FE_DG_Taylor<dim, spacedim>::get_degree() const
 {
   return this->degree;
 }
 
 // explicit instantiations
-#include "fe_dgt.inst"
+#include "FE_DG_Taylor.inst"
 
 DEAL_II_NAMESPACE_CLOSE
