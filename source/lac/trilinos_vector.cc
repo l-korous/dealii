@@ -237,14 +237,6 @@ namespace TrilinosWrappers
               owned_elements.compress();
             }
         }
-#if defined(DEBUG) && defined(DEAL_II_WITH_MPI)
-      const MPI_Comm mpi_communicator
-        = dynamic_cast<const Epetra_MpiComm *>(&(vector->Comm()))->Comm();
-      const size_type n_elements_global
-        = Utilities::MPI::sum (owned_elements.n_elements(), mpi_communicator);
-
-      Assert (has_ghosts || n_elements_global == size(), ExcInternalError());
-#endif
 
       last_action = Zero;
     }
@@ -276,13 +268,6 @@ namespace TrilinosWrappers
         }
       else
         owned_elements = parallel_partitioner;
-
-#ifdef DEBUG
-      const size_type n_elements_global
-        = Utilities::MPI::sum (owned_elements.n_elements(), communicator);
-
-      Assert (has_ghosts || n_elements_global == size(), ExcInternalError());
-#endif
 
       last_action = Zero;
     }
@@ -357,14 +342,6 @@ namespace TrilinosWrappers
 
           last_action = Insert;
         }
-#if defined(DEBUG) && defined(DEAL_II_WITH_MPI)
-      const MPI_Comm mpi_communicator
-        = dynamic_cast<const Epetra_MpiComm *>(&(vector->Comm()))->Comm();
-      const size_type n_elements_global
-        = Utilities::MPI::sum (owned_elements.n_elements(), mpi_communicator);
-
-      Assert (has_ghosts || n_elements_global == size(), ExcInternalError());
-#endif
     }
 
 
@@ -435,14 +412,6 @@ namespace TrilinosWrappers
 
           last_action = Insert;
         }
-#if defined(DEBUG) && defined(DEAL_II_WITH_MPI)
-      const MPI_Comm mpi_communicator
-        = dynamic_cast<const Epetra_MpiComm *>(&(vector->Comm()))->Comm();
-      const size_type n_elements_global
-        = Utilities::MPI::sum (owned_elements.n_elements(), mpi_communicator);
-
-      Assert (has_ghosts || n_elements_global == size(), ExcInternalError());
-#endif
     }
 
 
@@ -482,12 +451,6 @@ namespace TrilinosWrappers
               nonlocal_vector.reset(new Epetra_MultiVector(nonlocal_map, 1));
             }
         }
-#ifdef DEBUG
-      const size_type n_elements_global
-        = Utilities::MPI::sum (owned_elements.n_elements(), communicator);
-
-      Assert (has_ghosts || n_elements_global == size(), ExcInternalError());
-#endif
     }
 
 

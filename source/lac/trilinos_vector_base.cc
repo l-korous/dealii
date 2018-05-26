@@ -138,6 +138,7 @@ namespace TrilinosWrappers
 
     if (local_range() != v.local_range())
       {
+      std::cout << "local_range() != v.local_range()" << std::endl;
         last_action = Zero;
         vector.reset (new Epetra_FEVector(*v.vector));
         has_ghosts = v.has_ghosts;
@@ -145,6 +146,7 @@ namespace TrilinosWrappers
       }
     else
       {
+      std::cout << "local_range() == v.local_range()" << std::endl;
         Assert (vector->Map().SameAs(v.vector->Map()) == true,
                 ExcMessage ("The Epetra maps in the assignment operator ="
                             " do not match, even though the local_range "

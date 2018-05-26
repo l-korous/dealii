@@ -1093,10 +1093,6 @@ namespace TrilinosWrappers
   IndexSet
   VectorBase::locally_owned_elements() const
   {
-    Assert(owned_elements.size()==size(),
-           ExcMessage("The locally owned elements have not been properly initialized!"
-                      " This happens for example if this object has been initialized"
-                      " with exactly one overlapping IndexSet."));
     return owned_elements;
   }
 
